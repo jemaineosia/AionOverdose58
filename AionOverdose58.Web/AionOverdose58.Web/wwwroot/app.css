@@ -2,8 +2,13 @@ html, body {
     margin: 0;
     padding: 0;
     background-color: #080b14;
+    background-image: url('/Images/Background/Upheaval.png');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: #ffffff;
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Marcellus', serif;
     overflow-x: hidden;
 }
 

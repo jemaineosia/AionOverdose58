@@ -6,13 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["AionOverdose58.Web.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Marcellus&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet" />
     <HeadOutlet />
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,6 +21,7 @@
                 extend: {
                     fontFamily: {
                         cinzel: ['Cinzel', 'serif'],
+                        marcellus: ['Marcellus', 'serif'],
                         raleway: ['Raleway', 'sans-serif'],
                     },
                     colors: {
@@ -37,7 +37,7 @@
     </script>
 </head>
 
-<body class="bg-aion-dark text-white font-raleway">
+<body class="bg-aion-dark text-white font-marcellus">
     <Routes />
     <script src="_framework/blazor.web.js"></script>
 </body>

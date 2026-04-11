@@ -1,17 +1,43 @@
-@rendermode InteractiveAuto
+@rendermode InteractiveServer
 @implements IAsyncDisposable
 
 <div class="relative h-screen overflow-hidden bg-aion-dark">
     @foreach (var (slide, index) in _slides.Select((s, i) => (s, i)))
     {
         <div class="absolute inset-0 transition-opacity duration-1000 @(index == _currentIndex ? "opacity-100 z-10" : "opacity-0 z-0")"
-             style="background-image: url('@slide.ImageUrl'); background-size: cover; background-position: center;">
-            <!-- Dark overlay -->
-            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
+             style="background-image: url('@slide.ImageUrl'); background-size: cover; background-position: center top;">
 
-            <!-- Slide content -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-                <h1 class="font-cinzel text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-wider uppercase mb-4"
+            <!-- Overlay: stronger at bottom for text legibility -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/80"></div>
+
+            <!-- ── MOBILE content: bottom-left ── -->
+            <div class="md:hidden absolute inset-0 flex flex-col justify-end px-6 pb-16">
+                <h1 class="font-marcellus text-5xl font-bold text-white leading-tight mb-4"
+                    style="text-shadow: 0 2px 24px rgba(0,0,0,0.9);">
+                    @slide.Title
+                </h1>
+
+                <!-- Scrollwork ornamental divider -->
+                <div class="flex items-center gap-2 mb-4 w-full">
+                    <div class="flex-1 h-px bg-white/60"></div>
+                    <svg width="80" height="20" viewBox="0 0 80 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
+                        <path d="M0 10 Q10 2, 20 10 Q30 18, 40 10 Q50 2, 60 10 Q70 18, 80 10" stroke="white" stroke-width="1" stroke-opacity="0.8" fill="none"/>
+                        <circle cx="40" cy="10" r="3" fill="white" fill-opacity="0.8"/>
+                        <circle cx="20" cy="10" r="1.5" fill="white" fill-opacity="0.6"/>
+                        <circle cx="60" cy="10" r="1.5" fill="white" fill-opacity="0.6"/>
+                    </svg>
+                    <div class="flex-1 h-px bg-white/60"></div>
+                </div>
+
+                <p class="font-raleway text-base text-white/80 italic leading-relaxed max-w-sm"
+                   style="text-shadow: 0 1px 10px rgba(0,0,0,0.9);">
+                    @slide.Subtitle
+                </p>
+            </div>
+
+            <!-- ── DESKTOP content: centred ── -->
+            <div class="hidden md:flex absolute inset-0 flex-col items-center justify-center text-center px-6">
+                <h1 class="font-marcellus text-6xl lg:text-7xl font-bold text-white tracking-wider uppercase mb-4"
                     style="text-shadow: 0 2px 20px rgba(0,0,0,0.8);">
                     @slide.Title
                 </h1>
@@ -25,7 +51,7 @@
                     <div class="flex-1 h-px bg-gradient-to-l from-transparent to-aion-gold/70"></div>
                 </div>
 
-                <p class="font-raleway text-lg md:text-xl text-white/80 italic max-w-xl"
+                <p class="font-raleway text-xl text-white/80 italic max-w-xl"
                    style="text-shadow: 0 1px 10px rgba(0,0,0,0.9);">
                     @slide.Subtitle
                 </p>
@@ -33,29 +59,27 @@
         </div>
     }
 
-    <!-- Left arrow -->
+    <!-- Arrows — hidden on mobile -->
     <button @onclick="PreviousSlide"
-            class="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
+            class="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
         </svg>
     </button>
-
-    <!-- Right arrow -->
     <button @onclick="NextSlide"
-            class="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
+            class="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
         </svg>
     </button>
 
     <!-- Dot indicators -->
-    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-3">
         @for (int i = 0; i < _slides.Count; i++)
         {
             var idx = i;
             <button @onclick="() => GoToSlide(idx)"
-                    class="w-2.5 h-2.5 rounded-full transition-all duration-300 @(idx == _currentIndex ? "bg-aion-gold scale-125" : "bg-white/40 hover:bg-white/70")">
+                    class="w-2 h-2 rounded-full transition-all duration-300 @(idx == _currentIndex ? "bg-white scale-125" : "bg-white/40 hover:bg-white/70")">
             </button>
         }
     </div>
@@ -67,9 +91,7 @@
 
     private readonly List<SlideData> _slides = new()
     {
-        new SlideData("https://picsum.photos/1920/1080?random=1", "Vanquish the Shadow Wraiths", "Rise from the ashes and reclaim the eternal sky"),
-        new SlideData("https://picsum.photos/1920/1080?random=2", "The Elyos Reborn", "Wings of light, blades of vengeance"),
-        new SlideData("https://picsum.photos/1920/1080?random=3", "Conquer the Abyss", "Where angels and demons wage eternal war"),
+        new SlideData("/Images/Background/Upheaval2.png", "Aion 4.9: Upheaval", "The limits of Balaurea have been tapped. A false vision of victory has deceived the Daevas and brought an uneasy confidence. The death of Tiamat, the discovery of Kaldor and Levinshor, and mounting conquests brought glimmers of security to a doomed world."),
     };
 
     protected override void OnAfterRender(bool firstRender)
