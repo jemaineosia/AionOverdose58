@@ -106,6 +106,7 @@
         public string Password { get; set; } = string.Empty;
 
         [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
