@@ -1,0 +1,120 @@
+@page "/news"
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Web.Services
+@inject INewsService NewsService
+
+<PageTitle>News &amp; Updates — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen bg-aion-dark pt-40 pb-16 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Page header -->
+        <div class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl md:text-5xl text-white tracking-widest uppercase mb-3">
+                News &amp; Updates
+            </h1>
+            <div class="flex items-center justify-center gap-3">
+                <div class="h-px w-20 bg-aion-gold/60"></div>
+                <span class="text-aion-gold text-lg">⚔</span>
+                <div class="h-px w-20 bg-aion-gold/60"></div>
+            </div>
+        </div>
+
+        @if (_articles == null)
+        {
+            <div class="text-center text-gray-400 py-16">Loading...</div>
+        }
+        else
+        {
+            <!-- Article grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                @foreach (var article in _articles)
+                {
+                    <a href="/news/@article.Slug"
+                       class="block bg-gray-900/80 border border-gray-700/50 rounded-lg overflow-hidden hover:border-aion-gold/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50">
+                        @if (!string.IsNullOrEmpty(article.ImageUrl))
+                        {
+                            <div class="aspect-video overflow-hidden">
+                                <img src="@article.ImageUrl" alt="@article.Title"
+                                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                            </div>
+                        }
+                        <div class="p-5">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-aion-gold text-xs uppercase tracking-widest">
+                                    @article.PublishedAt.ToString("MMM d, yyyy")
+                                </span>
+                                <span class="text-gray-600">·</span>
+                                <span class="text-gray-500 text-xs">@article.AuthorName</span>
+                            </div>
+                            <h3 class="font-cinzel text-white text-base font-semibold mb-2 leading-tight">
+                                @article.Title
+                            </h3>
+                            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4">
+                                @article.Summary
+                            </p>
+                            <span class="text-aion-crimson text-xs uppercase tracking-wider font-semibold hover:text-aion-gold transition-colors">
+                                Read More →
+                            </span>
+                        </div>
+                    </a>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (_totalPages > 1)
+            {
+                <div class="flex justify-center items-center gap-4">
+                    <button @onclick="PreviousPage"
+                            disabled="@(_currentPage == 1)"
+                            class="px-6 py-2 border border-gray-600 text-gray-300 text-sm uppercase tracking-wider hover:border-aion-gold/50 hover:text-aion-gold transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        ← Prev
+                    </button>
+                    <span class="text-gray-400 text-sm">@_currentPage / @_totalPages</span>
+                    <button @onclick="NextPage"
+                            disabled="@(_currentPage == _totalPages)"
+                            class="px-6 py-2 border border-gray-600 text-gray-300 text-sm uppercase tracking-wider hover:border-aion-gold/50 hover:text-aion-gold transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        Next →
+                    </button>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private List<NewsArticle>? _articles;
+    private int _currentPage = 1;
+    private int _totalPages = 1;
+    private const int PageSize = 9;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPage();
+    }
+
+    private async Task LoadPage()
+    {
+        _articles = null;
+        var total = await NewsService.GetTotalCountAsync();
+        _totalPages = (int)Math.Ceiling(total / (double)PageSize);
+        _articles = await NewsService.GetAllAsync(_currentPage, PageSize);
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await LoadPage();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (_currentPage < _totalPages)
+        {
+            _currentPage++;
+            await LoadPage();
+        }
+    }
+}

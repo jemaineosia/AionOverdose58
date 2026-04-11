@@ -1,0 +1,105 @@
+@using Microsoft.AspNetCore.Components.Routing
+
+<nav class="absolute top-0 left-0 right-0 z-50 px-4 py-4 flex flex-col items-center">
+    <!-- Logo Section -->
+    <div class="text-center mb-4">
+        <div class="text-4xl mb-1">☠</div>
+        <a href="/" class="font-cinzel text-white text-2xl md:text-3xl font-bold tracking-[0.3em] uppercase hover:text-aion-gold transition-colors duration-300">
+            AION OVERDOSE 58
+        </a>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="flex items-center gap-6 md:gap-10 font-raleway text-sm uppercase tracking-widest">
+        <NavLink href="/" Match="NavLinkMatch.All" class="nav-link-item">HOME</NavLink>
+        <NavLink href="/news" class="nav-link-item">NEWS</NavLink>
+        <a href="#" target="_blank" rel="noopener noreferrer" class="nav-link-item">WIKI</a>
+        <NavLink href="/ranking" class="nav-link-item">RANKING</NavLink>
+
+        <!-- Account Dropdown -->
+        <div class="relative" @ref="_accountDropdownRef">
+            <button @onclick="ToggleAccountMenu"
+                    class="nav-link-item flex items-center gap-1 cursor-pointer bg-transparent border-none p-0">
+                ACCOUNT
+                <svg class="w-3 h-3 transition-transform @(_showAccountMenu ? "rotate-180" : "")"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            @if (_showAccountMenu)
+            {
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-44 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded shadow-xl z-50">
+                    <a href="/account/login"
+                       class="block px-4 py-2.5 text-sm text-gray-200 hover:bg-aion-red/30 hover:text-white transition-colors uppercase tracking-wider"
+                       @onclick="CloseAccountMenu">Login</a>
+                    <a href="/account/register"
+                       class="block px-4 py-2.5 text-sm text-gray-200 hover:bg-aion-red/30 hover:text-white transition-colors uppercase tracking-wider"
+                       @onclick="CloseAccountMenu">Register</a>
+                    <a href="/account/panel"
+                       class="block px-4 py-2.5 text-sm text-gray-200 hover:bg-aion-red/30 hover:text-white transition-colors uppercase tracking-wider"
+                       @onclick="CloseAccountMenu">Control Panel</a>
+                </div>
+            }
+        </div>
+
+        <!-- Mobile Hamburger -->
+        <button @onclick="ToggleMobileMenu" class="md:hidden nav-link-item">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    @if (_showMobileMenu)
+    {
+        <div class="md:hidden mt-4 flex flex-col items-center gap-3 font-raleway text-sm uppercase tracking-widest bg-gray-900/90 backdrop-blur-sm rounded-lg p-4 w-full max-w-xs">
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-link-item" @onclick="CloseMobileMenu">HOME</NavLink>
+            <NavLink href="/news" class="nav-link-item" @onclick="CloseMobileMenu">NEWS</NavLink>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="nav-link-item">WIKI</a>
+            <NavLink href="/ranking" class="nav-link-item" @onclick="CloseMobileMenu">RANKING</NavLink>
+            <NavLink href="/account/login" class="nav-link-item" @onclick="CloseMobileMenu">LOGIN</NavLink>
+            <NavLink href="/account/register" class="nav-link-item" @onclick="CloseMobileMenu">REGISTER</NavLink>
+            <NavLink href="/account/panel" class="nav-link-item" @onclick="CloseMobileMenu">CONTROL PANEL</NavLink>
+        </div>
+    }
+</nav>
+
+<style>
+    .nav-link-item {
+        color: #ffffff;
+        text-decoration: none;
+        letter-spacing: 0.15em;
+        transition: color 0.2s;
+        position: relative;
+    }
+    .nav-link-item:hover,
+    .nav-link-item.active {
+        color: #c9a84c;
+    }
+    .nav-link-item::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 0;
+        height: 1px;
+        background: #c9a84c;
+        transition: width 0.3s;
+    }
+    .nav-link-item:hover::after,
+    .nav-link-item.active::after {
+        width: 100%;
+    }
+</style>
+
+@code {
+    private bool _showAccountMenu = false;
+    private bool _showMobileMenu = false;
+    private ElementReference _accountDropdownRef;
+
+    private void ToggleAccountMenu() => _showAccountMenu = !_showAccountMenu;
+    private void CloseAccountMenu() => _showAccountMenu = false;
+    private void ToggleMobileMenu() => _showMobileMenu = !_showMobileMenu;
+    private void CloseMobileMenu() => _showMobileMenu = false;
+}

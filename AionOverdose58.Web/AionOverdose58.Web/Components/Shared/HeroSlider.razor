@@ -1,0 +1,125 @@
+@rendermode InteractiveAuto
+@implements IAsyncDisposable
+
+<div class="relative h-screen overflow-hidden bg-aion-dark">
+    @foreach (var (slide, index) in _slides.Select((s, i) => (s, i)))
+    {
+        <div class="absolute inset-0 transition-opacity duration-1000 @(index == _currentIndex ? "opacity-100 z-10" : "opacity-0 z-0")"
+             style="background-image: url('@slide.ImageUrl'); background-size: cover; background-position: center;">
+            <!-- Dark overlay -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
+
+            <!-- Slide content -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                <h1 class="font-cinzel text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-wider uppercase mb-4"
+                    style="text-shadow: 0 2px 20px rgba(0,0,0,0.8);">
+                    @slide.Title
+                </h1>
+
+                <!-- Ornamental divider -->
+                <div class="flex items-center gap-3 my-4 w-full max-w-md">
+                    <div class="flex-1 h-px bg-gradient-to-r from-transparent to-aion-gold/70"></div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" class="text-aion-gold fill-current flex-shrink-0">
+                        <path d="M12 2l2.5 7h7.5l-6 4.5 2.5 7-6-4.5-6 4.5 2.5-7-6-4.5h7.5z"/>
+                    </svg>
+                    <div class="flex-1 h-px bg-gradient-to-l from-transparent to-aion-gold/70"></div>
+                </div>
+
+                <p class="font-raleway text-lg md:text-xl text-white/80 italic max-w-xl"
+                   style="text-shadow: 0 1px 10px rgba(0,0,0,0.9);">
+                    @slide.Subtitle
+                </p>
+            </div>
+        </div>
+    }
+
+    <!-- Left arrow -->
+    <button @onclick="PreviousSlide"
+            class="absolute left-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
+
+    <!-- Right arrow -->
+    <button @onclick="NextSlide"
+            class="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white transition-colors duration-200 bg-black/20 hover:bg-black/40 rounded p-2">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+
+    <!-- Dot indicators -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+        @for (int i = 0; i < _slides.Count; i++)
+        {
+            var idx = i;
+            <button @onclick="() => GoToSlide(idx)"
+                    class="w-2.5 h-2.5 rounded-full transition-all duration-300 @(idx == _currentIndex ? "bg-aion-gold scale-125" : "bg-white/40 hover:bg-white/70")">
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private int _currentIndex = 0;
+    private System.Timers.Timer? _timer;
+
+    private readonly List<SlideData> _slides = new()
+    {
+        new SlideData("https://picsum.photos/1920/1080?random=1", "Vanquish the Shadow Wraiths", "Rise from the ashes and reclaim the eternal sky"),
+        new SlideData("https://picsum.photos/1920/1080?random=2", "The Elyos Reborn", "Wings of light, blades of vengeance"),
+        new SlideData("https://picsum.photos/1920/1080?random=3", "Conquer the Abyss", "Where angels and demons wage eternal war"),
+    };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _timer = new System.Timers.Timer(5000);
+            _timer.Elapsed += async (_, _) =>
+            {
+                _currentIndex = (_currentIndex + 1) % _slides.Count;
+                await InvokeAsync(StateHasChanged);
+            };
+            _timer.AutoReset = true;
+            _timer.Start();
+        }
+    }
+
+    private void NextSlide()
+    {
+        _currentIndex = (_currentIndex + 1) % _slides.Count;
+        ResetTimer();
+    }
+
+    private void PreviousSlide()
+    {
+        _currentIndex = (_currentIndex - 1 + _slides.Count) % _slides.Count;
+        ResetTimer();
+    }
+
+    private void GoToSlide(int index)
+    {
+        _currentIndex = index;
+        ResetTimer();
+    }
+
+    private void ResetTimer()
+    {
+        if (_timer != null)
+        {
+            _timer.Stop();
+            _timer.Start();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    private record SlideData(string ImageUrl, string Title, string Subtitle);
+}

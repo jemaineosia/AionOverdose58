@@ -1,0 +1,28 @@
+# Build output
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Node modules (if using Tailwind PostCSS)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# dotnet publish output
+publish/
+dist/
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

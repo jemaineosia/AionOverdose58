@@ -1,0 +1,111 @@
+@page "/account/register"
+@rendermode InteractiveAuto
+
+<PageTitle>Register — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen bg-aion-dark flex items-center justify-center px-4 pt-20">
+    <div class="w-full max-w-md">
+        <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-8">
+            <div class="text-center mb-8">
+                <div class="text-3xl mb-2">☠</div>
+                <h1 class="font-cinzel text-2xl text-white tracking-widest uppercase">Register</h1>
+                <p class="text-gray-400 text-sm mt-2 font-raleway">Join the eternal conflict</p>
+            </div>
+
+            <EditForm Model="_registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+                <DataAnnotationsValidator />
+
+                <div class="mb-4">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Username</label>
+                    <InputText @bind-Value="_registerModel.Username"
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                               placeholder="YourDaevaName" />
+                    <ValidationMessage For="@(() => _registerModel.Username)" class="text-red-400 text-xs mt-1" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Email</label>
+                    <InputText @bind-Value="_registerModel.Email"
+                               type="email"
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                               placeholder="your@email.com" />
+                    <ValidationMessage For="@(() => _registerModel.Email)" class="text-red-400 text-xs mt-1" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Password</label>
+                    <InputText @bind-Value="_registerModel.Password"
+                               type="password"
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                               placeholder="••••••••" />
+                    <ValidationMessage For="@(() => _registerModel.Password)" class="text-red-400 text-xs mt-1" />
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Confirm Password</label>
+                    <InputText @bind-Value="_registerModel.ConfirmPassword"
+                               type="password"
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                               placeholder="••••••••" />
+                    <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-red-400 text-xs mt-1" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="bg-aion-red/20 border border-aion-red/50 text-red-300 text-sm px-4 py-3 rounded mb-4">
+                        @_errorMessage
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="bg-green-900/20 border border-green-500/50 text-green-300 text-sm px-4 py-3 rounded mb-4">
+                        @_successMessage
+                    </div>
+                }
+
+                <button type="submit"
+                        class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded">
+                    Register
+                </button>
+            </EditForm>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-500 text-sm">
+                    Already have an account?
+                    <a href="/account/login" class="text-aion-gold hover:text-white transition-colors">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel _registerModel = new();
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private void HandleRegister()
+    {
+        // TODO: Implement registration logic
+        _errorMessage = null;
+        _successMessage = "Registration not yet implemented. Coming soon!";
+    }
+
+    private class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(3)]
+        public string Username { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

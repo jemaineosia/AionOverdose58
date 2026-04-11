@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/AionOverdose58.Web/">
+    <Project Path="AionOverdose58.Web/AionOverdose58.Web.Client/AionOverdose58.Web.Client.csproj" />
+    <Project Path="AionOverdose58.Web/AionOverdose58.Web/AionOverdose58.Web.csproj" />
+  </Folder>
+  <Project Path="AionOverdose58.Data/AionOverdose58.Data.csproj" />
+  <Project Path="AionOverdose58.Shared/AionOverdose58.Shared.csproj" />
+</Solution>
