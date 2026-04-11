@@ -1,0 +1,81 @@
+@page "/account/panel"
+
+<PageTitle>Control Panel — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen bg-aion-dark pt-32 pb-16 px-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl text-white tracking-widest uppercase mb-2">
+                Control Panel
+            </h1>
+            <p class="text-gray-400 font-raleway">Welcome, Daeva</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Profile card -->
+            <div class="md:col-span-1 bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Profile</h2>
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 rounded-full bg-aion-teal flex items-center justify-center text-2xl mb-3">
+                        ☠
+                    </div>
+                    <p class="text-white font-semibold">Guest Daeva</p>
+                    <p class="text-gray-500 text-sm">guest@aionoverdose58.com</p>
+                    <span class="mt-2 px-3 py-1 bg-aion-red/20 border border-aion-red/40 text-aion-crimson text-xs rounded-full uppercase tracking-wider">Player</span>
+                </div>
+                <div class="mt-6 space-y-2">
+                    <a href="#" class="block text-center text-sm text-gray-400 hover:text-aion-gold transition-colors py-2 border border-gray-700 rounded hover:border-aion-gold/40">
+                        Edit Profile
+                    </a>
+                    <a href="#" class="block text-center text-sm text-gray-400 hover:text-aion-gold transition-colors py-2 border border-gray-700 rounded hover:border-aion-gold/40">
+                        Change Password
+                    </a>
+                </div>
+            </div>
+
+            <!-- Activity panel -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                    <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Recent Activity</h2>
+                    <div class="space-y-3">
+                        @foreach (var item in _recentActivity)
+                        {
+                            <div class="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0">
+                                <span class="text-aion-gold text-sm">⚔</span>
+                                <span class="text-gray-300 text-sm">@item</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                    <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Quick Links</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="/news" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                            📰 Latest News
+                        </a>
+                        <a href="/ranking" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                            🏆 Rankings
+                        </a>
+                        <a href="#" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                            📖 Wiki
+                        </a>
+                        <a href="/account/login" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                            🚪 Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<string> _recentActivity = new()
+    {
+        "Account created — Welcome to Aion Overdose 58",
+        "Profile setup pending",
+        "No recent battles recorded",
+        "No forum activity yet",
+    };
+}

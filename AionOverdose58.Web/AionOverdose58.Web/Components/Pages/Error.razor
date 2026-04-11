@@ -1,0 +1,27 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen bg-aion-dark flex items-center justify-center px-4 pt-20">
+    <div class="text-center">
+        <h1 class="font-cinzel text-6xl md:text-8xl text-aion-crimson font-bold mb-4">ERROR</h1>
+        <p class="font-raleway text-gray-400 text-lg mb-8">An unexpected error has occurred in the realm.</p>
+        <a href="/" class="inline-block border border-aion-gold/50 text-aion-gold font-raleway text-sm uppercase tracking-widest px-8 py-3 hover:bg-aion-gold/10 transition-all duration-300">
+            Return Home
+        </a>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? _requestId;
+    private bool _showRequestId => !string.IsNullOrEmpty(_requestId);
+
+    protected override void OnInitialized()
+    {
+        _requestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+    }
+}

@@ -1,0 +1,74 @@
+@page "/"
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Web.Services
+@inject INewsService NewsService
+
+<PageTitle>Aion Overdose 58 — Home</PageTitle>
+
+<!-- Hero Slider -->
+<HeroSlider />
+
+<!-- Latest News Section -->
+<section class="bg-aion-dark py-16 px-4">
+    <div class="max-w-6xl mx-auto">
+        <h2 class="font-cinzel text-3xl md:text-4xl text-white text-center tracking-widest uppercase mb-2">
+            Latest News
+        </h2>
+        <div class="flex justify-center mb-10">
+            <div class="h-px w-24 bg-aion-gold/60"></div>
+        </div>
+
+        @if (_latestNews == null)
+        {
+            <div class="text-center text-gray-400">Loading...</div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @foreach (var article in _latestNews)
+                {
+                    <a href="/news/@article.Slug"
+                       class="block bg-gray-900/80 border border-gray-700/50 rounded-lg overflow-hidden hover:border-aion-gold/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-aion-red/10">
+                        @if (!string.IsNullOrEmpty(article.ImageUrl))
+                        {
+                            <div class="aspect-video overflow-hidden">
+                                <img src="@article.ImageUrl" alt="@article.Title"
+                                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                            </div>
+                        }
+                        <div class="p-5">
+                            <p class="text-aion-gold text-xs uppercase tracking-widest mb-2">
+                                @article.PublishedAt.ToString("MMMM d, yyyy")
+                            </p>
+                            <h3 class="font-cinzel text-white text-lg font-semibold mb-2 leading-tight">
+                                @article.Title
+                            </h3>
+                            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3">
+                                @article.Summary
+                            </p>
+                            <span class="inline-block mt-4 text-aion-gold text-xs uppercase tracking-wider hover:text-white transition-colors">
+                                Read More &#8594;
+                            </span>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+
+        <div class="text-center mt-10">
+            <a href="/news"
+               class="inline-block border border-aion-gold/50 text-aion-gold font-raleway text-sm uppercase tracking-widest px-8 py-3 hover:bg-aion-gold/10 transition-all duration-300">
+                All News
+            </a>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<NewsArticle>? _latestNews;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _latestNews = await NewsService.GetLatestAsync(3);
+    }
+}

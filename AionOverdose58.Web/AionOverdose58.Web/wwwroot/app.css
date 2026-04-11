@@ -1,0 +1,57 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #080b14;
+    color: #ffffff;
+    font-family: 'Raleway', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #080b14;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #8b1a1a;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c0392b;
+}
+
+/* Blazor error UI */
+#blazor-error-ui {
+    background: #8b1a1a;
+    bottom: 0;
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.15);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    color: white;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.blazor-error-boundary {
+    background: #8b1a1a;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
