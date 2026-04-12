@@ -1,7 +1,7 @@
 @using Microsoft.AspNetCore.Components.Routing
 
 <!-- ══════════════════════════════════════════
-     MOBILE NAV — white bar, hamburger left, logo center
+     MOBILE NAV
      ══════════════════════════════════════════ -->
 <nav class="md:hidden fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
     <div class="flex items-center justify-between px-4 py-3">
@@ -12,12 +12,6 @@
             </svg>
         </button>
 
-        <!-- Logo centered
-        <a href="/" class="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-            <img src="/Images/AionOD_logo.png" alt="Aion Overdose" class="h-8 w-auto" />
-            <span class="font-marcellus text-gray-900 text-sm tracking-[0.25em] uppercase">U P H E A V A L</span>
-        </a> -->
-
         <!-- Right spacer to balance hamburger -->
         <div class="w-6"></div>
     </div>
@@ -26,33 +20,47 @@
     @if (_showMobileMenu)
     {
         <div class="flex flex-col border-t border-gray-200 bg-white font-marcellus text-sm uppercase tracking-widest">
-            <NavLink href="/" Match="NavLinkMatch.All" class="mobile-nav-link" @onclick="CloseMobileMenu">Home</NavLink>
-            <NavLink href="/news" class="mobile-nav-link" @onclick="CloseMobileMenu">News</NavLink>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="mobile-nav-link">Wiki</a>
-            <NavLink href="/ranking" class="mobile-nav-link" @onclick="CloseMobileMenu">Ranking</NavLink>
-            <NavLink href="/account/login" class="mobile-nav-link" @onclick="CloseMobileMenu">Login</NavLink>
-            <NavLink href="/account/register" class="mobile-nav-link" @onclick="CloseMobileMenu">Register</NavLink>
-            <NavLink href="/account/panel" class="mobile-nav-link" @onclick="CloseMobileMenu">Control Panel</NavLink>
+            <NavLink href="/"       Match="NavLinkMatch.All" class="mobile-nav-link" @onclick="CloseMobileMenu">Home</NavLink>
+            <NavLink href="/news"                            class="mobile-nav-link" @onclick="CloseMobileMenu">News</NavLink>
+
+            <!-- SERVER group -->
+            <button @onclick="ToggleMobileServer" class="mobile-nav-link flex justify-between items-center w-full text-left">
+                <span>Server</span>
+                <span class="text-xs @(_showMobileServer ? "rotate-90" : "") transition-transform inline-block">&#8250;</span>
+            </button>
+            @if (_showMobileServer)
+            {
+                <NavLink href="/server/features"       class="mobile-nav-sub" @onclick="CloseMobileMenu">Features</NavLink>
+                <NavLink href="/server/instances"      class="mobile-nav-sub" @onclick="CloseMobileMenu">Instances</NavLink>
+                <NavLink href="/server/event-schedule" class="mobile-nav-sub" @onclick="CloseMobileMenu">Event Schedule</NavLink>
+            }
+
+            <NavLink href="/download"      class="mobile-nav-link" @onclick="CloseMobileMenu">Download</NavLink>
+            <NavLink href="/rankings"      class="mobile-nav-link" @onclick="CloseMobileMenu">Rankings</NavLink>
+            <NavLink href="/server-status" class="mobile-nav-link" @onclick="CloseMobileMenu">Server Status</NavLink>
+
+            <div class="border-t border-gray-300 my-1"></div>
+
+            <NavLink href="/account/login" class="mobile-nav-link" @onclick="CloseMobileMenu">Sign In</NavLink>
+            <div class="px-4 py-3">
+                <NavLink href="/account/register" class="mobile-register-btn block text-center" @onclick="CloseMobileMenu">
+                    Register
+                </NavLink>
+            </div>
         </div>
     }
 </nav>
 
 <!-- ══════════════════════════════════════════
-     DESKTOP NAV — logo top-center → site name → nav strip
+     DESKTOP NAV — logo → name → nav strip
      ══════════════════════════════════════════ -->
 <header class="hidden md:flex absolute top-0 left-0 right-0 z-50 flex-col items-center">
 
-    <!-- Logo image -->
+    <!-- Logo -->
     <div class="pt-6 pb-1">
         <img src="/Images/AionOD_logo.png" alt="Aion Overdose"
              class="h-28 w-auto mx-auto drop-shadow-lg" />
     </div>
-
-    <!-- Spaced site name
-    <div class="font-marcellus text-white text-xs tracking-[0.55em] uppercase mb-3"
-         style="letter-spacing: 0.55em; text-shadow: 0 1px 8px rgba(0,0,0,0.8);">
-        U P H E A V A L
-    </div> -->
 
     <!-- Nav strip -->
     <nav class="w-full flex justify-center items-center py-3 px-8"
@@ -65,52 +73,63 @@
             <NavLink href="/news" class="nav-link-item">NEWS</NavLink>
             <span class="nav-dot">·</span>
 
-            <a href="#" target="_blank" rel="noopener noreferrer" class="nav-link-item">WIKI</a>
-            <span class="nav-dot">·</span>
-
-            <NavLink href="/ranking" class="nav-link-item">RANKING</NavLink>
-            <span class="nav-dot">·</span>
-
-            <!-- Account dropdown -->
-            <div class="relative" @ref="_accountDropdownRef">
-                <button @onclick="ToggleAccountMenu"
+            <!-- SERVER dropdown -->
+            <div class="relative" @ref="_serverDropdownRef">
+                <button @onclick="ToggleServerMenu"
                         class="nav-link-item flex items-center gap-1 bg-transparent border-none cursor-pointer p-0">
-                    ACCOUNT
+                    SERVER
                 </button>
-
-                @if (_showAccountMenu)
+                @if (_showServerMenu)
                 {
                     <div class="dropdown-panel absolute top-full left-1/2 -translate-x-1/2 mt-2 w-52 z-50">
-                        <a href="/account/login" class="dropdown-item" @onclick="CloseAccountMenu">
-                            <span>Login</span><span class="dropdown-arrow">&#8250;</span>
-                        </a>
-                        <a href="/account/register" class="dropdown-item" @onclick="CloseAccountMenu">
-                            <span>Register</span><span class="dropdown-arrow">&#8250;</span>
-                        </a>
-                        <a href="/account/panel" class="dropdown-item" @onclick="CloseAccountMenu">
-                            <span>Control Panel</span><span class="dropdown-arrow">&#8250;</span>
-                        </a>
+                        <NavLink href="/server/features"       class="dropdown-item" @onclick="CloseServerMenu">
+                            <span>Features</span><span class="dropdown-arrow">&#8250;</span>
+                        </NavLink>
+                        <NavLink href="/server/instances"      class="dropdown-item" @onclick="CloseServerMenu">
+                            <span>Instances</span><span class="dropdown-arrow">&#8250;</span>
+                        </NavLink>
+                        <NavLink href="/server/event-schedule" class="dropdown-item" @onclick="CloseServerMenu">
+                            <span>Event Schedule</span><span class="dropdown-arrow">&#8250;</span>
+                        </NavLink>
                     </div>
                 }
             </div>
+            <span class="nav-dot">·</span>
+
+            <NavLink href="/download"      class="nav-link-item">DOWNLOAD</NavLink>
+            <span class="nav-dot">·</span>
+
+            <NavLink href="/rankings"      class="nav-link-item">RANKINGS</NavLink>
+            <span class="nav-dot">·</span>
+
+            <NavLink href="/server-status" class="nav-link-item">SERVER STATUS</NavLink>
+
+            <!-- Separator -->
+            <span class="nav-separator">|</span>
+
+            <NavLink href="/account/login" class="nav-link-item">SIGN IN</NavLink>
+
+            <NavLink href="/account/register" class="nav-register-btn ml-3">REGISTER</NavLink>
 
         </div>
     </nav>
 </header>
 
 <style>
-    /* ══════════════════════════════════════════
-       Shared styles for nav links, dots, and dropdown
-       ══════════════════════════════════════════ */
-
     /* ── Nav link ── */
     .nav-link-item {
         color: #ffffff;
         text-decoration: none;
         padding: 0 0.9rem;
-        transition: color 0.2s;
+        transition: color 0.2s, text-decoration 0.2s;
         position: relative;
         white-space: nowrap;
+        background: transparent;
+        border: none;
+        font-family: 'Marcellus', serif;
+        font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        cursor: pointer;
     }
     .nav-link-item:hover {
         color: #c9a84c;
@@ -128,12 +147,38 @@
         color: rgba(255,255,255,0.35);
         font-size: 1rem;
         user-select: none;
+        flex-shrink: 0;
+    }
+
+    /* ── Vertical separator ── */
+    .nav-separator {
+        color: rgba(255,255,255,0.25);
+        margin: 0 0.75rem;
+        font-size: 0.9rem;
+        user-select: none;
+    }
+
+    /* ── Register button ── */
+    .nav-register-btn {
+        color: #ffffff;
+        text-decoration: none;
+        font-family: 'Marcellus', serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255,255,255,0.55);
+        padding: 0.3rem 0.85rem;
+        white-space: nowrap;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .nav-register-btn:hover {
+        background: rgba(255,255,255,0.12);
+        border-color: #c9a84c;
+        color: #c9a84c;
     }
 
     /* ── Dropdown panel ── */
-    .dropdown-panel {
-        background: #1b1b1b;
-    }
+    .dropdown-panel { background: #1b1b1b; }
     .dropdown-item {
         display: flex;
         justify-content: space-between;
@@ -151,6 +196,7 @@
     .dropdown-item:hover {
         background: rgba(255,255,255,0.07);
         color: #ffffff;
+        text-decoration: none;
     }
     .dropdown-arrow {
         color: rgba(255,255,255,0.45);
@@ -160,28 +206,64 @@
 
     /* ── Mobile links ── */
     .mobile-nav-link {
-        display: block;
+        display: flex;
         padding: 0.85rem 1.25rem;
         color: #1f2937;
         font-family: 'Marcellus', serif;
         text-decoration: none;
         border-bottom: 1px solid #f3f4f6;
         transition: background 0.15s, color 0.15s;
+        background: transparent;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
     }
     .mobile-nav-link:hover,
     .mobile-nav-link.active {
         background: #f9fafb;
         color: #8b1a1a;
     }
+    .mobile-nav-sub {
+        display: block;
+        padding: 0.7rem 1.25rem 0.7rem 2.25rem;
+        color: #4b5563;
+        font-family: 'Marcellus', serif;
+        font-size: 0.85rem;
+        text-decoration: none;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+        transition: background 0.15s, color 0.15s;
+    }
+    .mobile-nav-sub:hover { color: #8b1a1a; background: #f3f4f6; }
+    .mobile-register-btn {
+        display: block;
+        text-align: center;
+        padding: 0.6rem 1rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #ffffff;
+        background: #8b1a1a;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .mobile-register-btn:hover { background: #c0392b; }
 </style>
 
 @code {
-    private bool _showAccountMenu = false;
-    private bool _showMobileMenu  = false;
-    private ElementReference _accountDropdownRef;
+    private bool _showServerMenu   = false;
+    private bool _showMobileMenu   = false;
+    private bool _showMobileServer = false;
 
-    private void ToggleAccountMenu() => _showAccountMenu = !_showAccountMenu;
-    private void CloseAccountMenu()  => _showAccountMenu = false;
-    private void ToggleMobileMenu()  => _showMobileMenu  = !_showMobileMenu;
-    private void CloseMobileMenu()   => _showMobileMenu  = false;
+    private ElementReference _serverDropdownRef;
+
+    private void ToggleServerMenu()   => _showServerMenu   = !_showServerMenu;
+    private void CloseServerMenu()    => _showServerMenu   = false;
+    private void ToggleMobileMenu()   => _showMobileMenu   = !_showMobileMenu;
+    private void CloseMobileMenu()    { _showMobileMenu = false; _showMobileServer = false; }
+    private void ToggleMobileServer() => _showMobileServer = !_showMobileServer;
 }
