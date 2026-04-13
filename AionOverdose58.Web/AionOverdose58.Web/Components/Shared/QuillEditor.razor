@@ -1,0 +1,41 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div id="@_editorId" style="min-height: @Height; background:#1e1e1e; color:#e5e5e5;"></div>
+
+@code {
+    [Parameter] public string Value         { get; set; } = string.Empty;
+    [Parameter] public string Height        { get; set; } = "380px";
+
+    private readonly string _editorId = $"quill-{Guid.NewGuid():N}";
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await JS.InvokeVoidAsync("quillInterop.initialize", _editorId, Value);
+        }
+    }
+
+    /// <summary>Call this before saving to retrieve the current HTML content.</summary>
+    public async Task<string> GetContentAsync()
+    {
+        if (!_initialized) return string.Empty;
+        return await JS.InvokeAsync<string>("quillInterop.getContent", _editorId);
+    }
+
+    /// <summary>Replaces the editor content programmatically.</summary>
+    public async Task SetContentAsync(string content)
+    {
+        if (_initialized)
+            await JS.InvokeVoidAsync("quillInterop.setContent", _editorId, content);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_initialized)
+            await JS.InvokeVoidAsync("quillInterop.dispose", _editorId);
+    }
+}

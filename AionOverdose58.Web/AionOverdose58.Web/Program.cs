@@ -21,6 +21,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 // Application services
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IRankingService, RankingService>();
+builder.Services.AddScoped<IArticleService, ArticleService>();
 
 var app = builder.Build();
 

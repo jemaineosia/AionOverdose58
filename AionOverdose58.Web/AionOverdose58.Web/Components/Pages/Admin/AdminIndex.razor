@@ -1,0 +1,115 @@
+@page "/admin"
+@layout AdminLayout
+@rendermode InteractiveServer
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Web.Services
+@inject IArticleService ArticleService
+@inject NavigationManager Nav
+
+<PageTitle>Admin — Articles</PageTitle>
+
+<h1 class="admin-title">Articles</h1>
+
+<!-- Toolbar -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+        <label class="admin-label" style="margin:0;">Show deleted</label>
+        <input type="checkbox" @bind="_showDeleted" @bind:after="LoadAsync" />
+    </div>
+    <a href="/admin/articles/create" class="btn-primary" style="text-decoration:none;">+ New Article</a>
+</div>
+
+<!-- Table -->
+<div class="admin-card" style="padding:0; overflow:hidden;">
+    @if (_articles is null)
+    {
+        <p style="padding:1.5rem; color:#666;">Loading…</p>
+    }
+    else if (_articles.Count == 0)
+    {
+        <p style="padding:1.5rem; color:#666;">No articles found.</p>
+    }
+    else
+    {
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+            <thead>
+                <tr style="border-bottom:1px solid #2a2a2a; background:#111;">
+                    <th style="padding:0.75rem 1rem; text-align:left; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">ID</th>
+                    <th style="padding:0.75rem 1rem; text-align:left; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">Title</th>
+                    <th style="padding:0.75rem 1rem; text-align:left; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">Category</th>
+                    <th style="padding:0.75rem 1rem; text-align:left; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">Posted</th>
+                    <th style="padding:0.75rem 1rem; text-align:left; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">Status</th>
+                    <th style="padding:0.75rem 1rem; text-align:right; color:#c9a84c; font-weight:normal; letter-spacing:0.08em; text-transform:uppercase; font-size:0.7rem;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in _articles)
+                {
+                    <tr style="border-bottom:1px solid #1e1e1e; @(a.IsDeleted ? "opacity:0.45;" : "")">
+                        <td style="padding:0.7rem 1rem; color:#555;">#@a.Id</td>
+                        <td style="padding:0.7rem 1rem; color:#ddd; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@a.Title</td>
+                        <td style="padding:0.7rem 1rem;">
+                            <span style="padding:0.2rem 0.55rem; background:#8b1a1a33; color:#c9a84c; border-radius:3px; font-size:0.7rem; letter-spacing:0.06em; text-transform:uppercase;">
+                                @a.Category
+                            </span>
+                        </td>
+                        <td style="padding:0.7rem 1rem; color:#777; white-space:nowrap;">
+                            @(a.PostedDate.HasValue ? a.PostedDate.Value.ToString("MMM d, yyyy") : "—")
+                        </td>
+                        <td style="padding:0.7rem 1rem;">
+                            @if (a.IsDeleted)
+                            { <span style="color:#e55; font-size:0.72rem;">Deleted</span> }
+                            else if (a.PostedDate is null)
+                            { <span style="color:#888; font-size:0.72rem;">Draft</span> }
+                            else
+                            { <span style="color:#5a5; font-size:0.72rem;">Published</span> }
+                        </td>
+                        <td style="padding:0.7rem 1rem; text-align:right; white-space:nowrap;">
+                            @if (!a.IsDeleted)
+                            {
+                                <a href="/admin/articles/edit/@a.Id" class="btn-secondary" style="margin-right:0.4rem; padding:0.3rem 0.65rem; font-size:0.72rem;">Edit</a>
+                                <button class="btn-danger" @onclick="() => DeleteAsync(a.Id)">Delete</button>
+                            }
+                            else
+                            {
+                                <button class="btn-restore" @onclick="() => RestoreAsync(a.Id)">Restore</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(_message))
+{
+    <p style="margin-top:1rem; color:#5a5; font-size:0.85rem;">@_message</p>
+}
+
+@code {
+    private List<Article>? _articles;
+    private bool           _showDeleted;
+    private string         _message = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _articles = await ArticleService.GetAllAsync(_showDeleted);
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        await ArticleService.SoftDeleteAsync(id);
+        _message = "Article deleted.";
+        await LoadAsync();
+    }
+
+    private async Task RestoreAsync(int id)
+    {
+        await ArticleService.RestoreAsync(id);
+        _message = "Article restored.";
+        await LoadAsync();
+    }
+}

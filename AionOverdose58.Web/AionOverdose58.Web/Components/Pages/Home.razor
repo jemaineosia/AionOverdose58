@@ -5,67 +5,341 @@
 
 <PageTitle>Aion Overdose 58 — Home</PageTitle>
 
-<!-- Hero Slider -->
-<HeroSlider />
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HERO SECTION
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="relative min-h-[85vh] flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-20">
+    <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
 
-<!-- Latest News Section -->
-<section class="bg-aion-dark py-16 px-4">
-    <div class="max-w-6xl mx-auto">
-        <h2 class="font-cinzel text-3xl md:text-4xl text-white text-center tracking-widest uppercase mb-2">
-            Latest News
-        </h2>
-        <div class="flex justify-center mb-10">
-            <div class="h-px w-24 bg-aion-gold/60"></div>
+        <!-- Main Title -->
+        <div class="mb-8">
+            <h1 class="font-cinzel text-2xl md:text-5xl lg:text-6xl uppercase tracking-[0.15em] md:tracking-[0.3em] mb-6" style="color:#c9a84c; text-shadow: 0 0 60px rgba(201,168,76,0.3), 0 4px 20px rgba(0,0,0,0.9);">Aion 4.9 &nbsp;·&nbsp; Middle Rate &nbsp;·&nbsp; Official Build</h1>
+
+            <!-- Ornamental divider -->
+            <div class="flex items-center justify-center gap-4 mb-8">
+                <div class="h-px w-32 bg-gradient-to-r from-transparent to-aion-gold/50"></div>
+                <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current text-aion-gold/80 flex-shrink-0">
+                    <path d="M12 2l2.5 7h7.5l-6 4.5 2.5 7-6-4.5-6 4.5 2.5-7-6-4.5h7.5z"/>
+                </svg>
+                <div class="h-px w-32 bg-gradient-to-l from-transparent to-aion-gold/50"></div>
+            </div>
         </div>
 
-        @if (_latestNews == null)
-        {
-            <div class="text-center text-gray-400">Loading...</div>
-        }
-        else
-        {
+        <!-- Tagline -->
+        <p class="font-raleway text-lg md:text-xl text-white/80 max-w-3xl mx-auto mb-12 leading-relaxed">
+            A true retail Aion 4.9 server with boosted experience rates, built entirely from official
+            game files and delivering a fully functional, authentic gameplay experience.
+        </p>
+
+        <!-- Call-to-Action Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">
+            <a href="/account/register"
+               class="group relative font-raleway text-sm uppercase tracking-widest px-12 py-4 bg-gradient-to-r from-aion-gold to-yellow-600 text-aion-dark font-bold shadow-lg shadow-aion-gold/30 hover:shadow-xl hover:shadow-aion-gold/50 hover:scale-105 transition-all duration-300">
+                <span class="relative z-10">Register Now</span>
+            </a>
+            <a href="/download"
+               class="font-raleway text-sm uppercase tracking-widest px-12 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white hover:bg-white/20 hover:border-white/50 transition-all duration-300">
+                Download Client
+            </a>
+            <a href="#" target="_blank"
+               class="font-raleway text-sm uppercase tracking-widest px-12 py-4 bg-[#5865F2]/20 backdrop-blur-sm border-2 border-[#5865F2]/50 text-[#5865F2] hover:bg-[#5865F2]/30 hover:border-[#5865F2]/70 transition-all duration-300">
+                Join Discord
+            </a>
+        </div>
+
+        <!-- Server Status Indicators -->
+        <div class="flex flex-wrap justify-center items-center gap-x-10 gap-y-4 font-raleway text-xs uppercase tracking-widest">
+            <div class="flex items-center gap-2 text-white/70">
+                <svg class="w-4 h-4 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                </svg>
+                <span>North America</span>
+            </div>
+            <div class="flex items-center gap-2 text-green-400 font-semibold">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-400"></span>
+                </span>
+                <span>Online</span>
+            </div>
+            <div class="flex items-center gap-2 text-white/70">
+                <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z"/>
+                </svg>
+                <span>Low EU Latency</span>
+            </div>
+            <div class="flex items-center gap-2 text-white/70">
+                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span>No Pay To Win</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SERVER RATES SECTION
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="py-20 bg-gradient-to-b from-black/40 to-black/60">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="font-cinzel text-3xl md:text-4xl uppercase tracking-widest text-aion-gold mb-4">
+                Server Rates
+            </h2>
+            <p class="font-raleway text-white/60 max-w-2xl mx-auto">
+                Carefully balanced rates for an enhanced gameplay experience
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- EXP Monsters -->
+            <div class="group relative bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm border border-aion-gold/20 p-8 hover:border-aion-gold/60 hover:shadow-xl hover:shadow-aion-gold/20 transition-all duration-300">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">💀</div>
+                    <h3 class="font-raleway text-sm uppercase tracking-widest text-white/70 mb-3">EXP Monsters</h3>
+                    <div class="text-4xl font-bold text-aion-gold mb-2">x5</div>
+                    <p class="text-xs text-white/50 font-raleway">Faster leveling through combat</p>
+                </div>
+                <div class="absolute inset-0 bg-aion-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+
+            <!-- EXP Quests -->
+            <div class="group relative bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm border border-aion-gold/20 p-8 hover:border-aion-gold/60 hover:shadow-xl hover:shadow-aion-gold/20 transition-all duration-300">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">📜</div>
+                    <h3 class="font-raleway text-sm uppercase tracking-widest text-white/70 mb-3">EXP Quests</h3>
+                    <div class="text-4xl font-bold text-aion-gold mb-2">x5</div>
+                    <p class="text-xs text-white/50 font-raleway">Rewarding quest completion</p>
+                </div>
+                <div class="absolute inset-0 bg-aion-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+
+            <!-- Drop Rate -->
+            <div class="group relative bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm border border-aion-gold/20 p-8 hover:border-aion-gold/60 hover:shadow-xl hover:shadow-aion-gold/20 transition-all duration-300">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">🎁</div>
+                    <h3 class="font-raleway text-sm uppercase tracking-widest text-white/70 mb-3">Drop Rate</h3>
+                    <div class="text-4xl font-bold text-aion-gold mb-2">x2.5</div>
+                    <p class="text-xs text-white/50 font-raleway">Better loot from enemies</p>
+                </div>
+                <div class="absolute inset-0 bg-aion-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+
+            <!-- Craft / Gather -->
+            <div class="group relative bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm border border-aion-gold/20 p-8 hover:border-aion-gold/60 hover:shadow-xl hover:shadow-aion-gold/20 transition-all duration-300">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">⚒️</div>
+                    <h3 class="font-raleway text-sm uppercase tracking-widest text-white/70 mb-3">Craft / Gather</h3>
+                    <div class="text-4xl font-bold text-aion-gold mb-2">x3</div>
+                    <p class="text-xs text-white/50 font-raleway">Enhanced professions</p>
+                </div>
+                <div class="absolute inset-0 bg-aion-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FEATURES SECTION
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="font-cinzel text-3xl md:text-4xl uppercase tracking-widest text-aion-gold mb-4">
+                Why Choose Aion Overdose 58?
+            </h2>
+            <p class="font-raleway text-white/60 max-w-2xl mx-auto">
+                Experience Aion as it was meant to be played
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Official Files</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">Built from authentic game files for 100% retail experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Balanced Rates</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">Carefully tuned rates for enjoyable progression</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Active Community</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">Join our thriving Discord and in-game community</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Stable & Secure</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">99.9% uptime with DDoS protection</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Fast Updates</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">Regular bug fixes and quality improvements</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="bg-black/30 backdrop-blur-sm border border-white/10 p-8 hover:border-aion-gold/40 transition-all duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-aion-gold/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-aion-gold" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-raleway text-lg font-semibold text-white mb-2">Fair Play</h3>
+                        <p class="text-sm text-white/60 leading-relaxed">No pay-to-win mechanics, skill-based gameplay</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     LATEST NEWS SECTION
+     ═══════════════════════════════════════════════════════════════════════ -->
+@if (_latestNews is not null && _latestNews.Any())
+{
+    <section class="py-20 bg-gradient-to-b from-black/60 to-black/40">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between mb-12">
+                <div>
+                    <h2 class="font-cinzel text-3xl md:text-4xl uppercase tracking-widest text-aion-gold mb-2">
+                        Latest News
+                    </h2>
+                    <p class="font-raleway text-white/60">Stay updated with server announcements</p>
+                </div>
+                <a href="/news" class="hidden sm:block font-raleway text-sm uppercase tracking-widest text-aion-gold hover:text-aion-gold/80 transition-colors">
+                    View All →
+                </a>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @foreach (var article in _latestNews)
                 {
-                    <a href="/news/@article.Slug"
-                       class="block bg-gray-900/80 border border-gray-700/50 rounded-lg overflow-hidden hover:border-aion-gold/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-aion-red/10">
+                    <a href="/news/@article.Id" class="group bg-black/40 backdrop-blur-sm border border-white/10 hover:border-aion-gold/40 transition-all duration-300 overflow-hidden">
                         @if (!string.IsNullOrEmpty(article.ImageUrl))
                         {
                             <div class="aspect-video overflow-hidden">
-                                <img src="@article.ImageUrl" alt="@article.Title"
-                                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                <img src="@article.ImageUrl" alt="@article.Title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                             </div>
                         }
-                        <div class="p-5">
-                            <p class="text-aion-gold text-xs uppercase tracking-widest mb-2">
-                                @article.PublishedAt.ToString("MMMM d, yyyy")
-                            </p>
-                            <h3 class="font-cinzel text-white text-lg font-semibold mb-2 leading-tight">
+                        <div class="p-6">
+                            <div class="text-xs font-raleway uppercase tracking-widest text-aion-gold/80 mb-3">
+                                @article.Category.GetDisplayName() · @article.PostedDate?.ToString("MMM dd, yyyy")
+                            </div>
+                            <h3 class="font-raleway text-lg font-semibold text-white mb-2 group-hover:text-aion-gold transition-colors">
                                 @article.Title
                             </h3>
-                            <p class="text-gray-400 text-sm leading-relaxed line-clamp-3">
-                                @article.Summary
+                            <p class="text-sm text-white/60 line-clamp-2">
+                                @article.PreviewContent
                             </p>
-                            <span class="inline-block mt-4 text-aion-gold text-xs uppercase tracking-wider hover:text-white transition-colors">
-                                Read More &#8594;
-                            </span>
                         </div>
                     </a>
                 }
             </div>
-        }
 
-        <div class="text-center mt-10">
-            <a href="/news"
-               class="inline-block border border-aion-gold/50 text-aion-gold font-raleway text-sm uppercase tracking-widest px-8 py-3 hover:bg-aion-gold/10 transition-all duration-300">
-                All News
+            <div class="text-center mt-8 sm:hidden">
+                <a href="/news" class="font-raleway text-sm uppercase tracking-widest text-aion-gold hover:text-aion-gold/80 transition-colors">
+                    View All News →
+                </a>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FINAL CTA SECTION
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="py-24">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+        <h2 class="font-cinzel text-3xl md:text-4xl uppercase tracking-widest text-white mb-6">
+            Ready to Begin Your Journey?
+        </h2>
+        <p class="font-raleway text-lg text-white/70 mb-10 max-w-2xl mx-auto">
+            Join hundreds of players in the most authentic Aion 4.9 experience available
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="/account/register"
+               class="font-raleway text-sm uppercase tracking-widest px-12 py-4 bg-gradient-to-r from-aion-gold to-yellow-600 text-aion-dark font-bold shadow-lg shadow-aion-gold/30 hover:shadow-xl hover:shadow-aion-gold/50 hover:scale-105 transition-all duration-300">
+                Create Account
+            </a>
+            <a href="/server/features"
+               class="font-raleway text-sm uppercase tracking-widest px-12 py-4 border-2 border-white/30 text-white hover:border-white/50 hover:bg-white/5 transition-all duration-300">
+                Learn More
             </a>
         </div>
     </div>
 </section>
 
 @code {
-    private List<NewsArticle>? _latestNews;
+    private List<Article>? _latestNews;
 
     protected override async Task OnInitializedAsync()
     {

@@ -5,4 +5,5 @@
   </Folder>
   <Project Path="AionOverdose58.Data/AionOverdose58.Data.csproj" />
   <Project Path="AionOverdose58.Shared/AionOverdose58.Shared.csproj" />
+  <Project Path="AionOverdose58.Tests/AionOverdose58.Tests.csproj" />
 </Solution>

@@ -2,7 +2,7 @@ html, body {
     margin: 0;
     padding: 0;
     background-color: #080b14;
-    background-image: url('/Images/Background/Upheaval.png');
+    background-image: url('/Images/Background/Upheaval2.png');
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;
@@ -10,6 +10,29 @@ html, body {
     color: #ffffff;
     font-family: 'Marcellus', serif;
     overflow-x: hidden;
+}
+
+/* Dark overlay to improve text legibility over the background image */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 15, 0.62);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Bottom vignette — fades page content into darkness at the footer */
+body::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 280px;
+    background: linear-gradient(to bottom, transparent 0%, rgba(5, 7, 15, 0.75) 55%, rgba(5, 7, 15, 0.97) 100%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Custom scrollbar */

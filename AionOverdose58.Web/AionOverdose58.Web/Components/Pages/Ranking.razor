@@ -5,7 +5,7 @@
 
 <PageTitle>Player Rankings — Aion Overdose 58</PageTitle>
 
-<div class="min-h-screen bg-aion-dark pt-40 pb-16 px-4">
+<div class="min-h-screen pt-56 pb-16 px-4">
     <div class="max-w-4xl mx-auto">
         <!-- Page header -->
         <div class="text-center mb-12">
@@ -19,71 +19,14 @@
             </div>
         </div>
 
-        @if (_rankings == null)
-        {
-            <div class="text-center text-gray-400 py-16">Loading rankings...</div>
-        }
-        else
-        {
-            <div class="overflow-hidden rounded-lg border border-gray-700/50">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-gray-900/90 border-b border-gray-700/50">
-                            <th class="font-cinzel text-aion-gold text-xs uppercase tracking-widest px-6 py-4 text-left">Rank</th>
-                            <th class="font-cinzel text-aion-gold text-xs uppercase tracking-widest px-6 py-4 text-left">Player</th>
-                            <th class="font-cinzel text-aion-gold text-xs uppercase tracking-widest px-6 py-4 text-left hidden md:table-cell">Class</th>
-                            <th class="font-cinzel text-aion-gold text-xs uppercase tracking-widest px-6 py-4 text-left hidden sm:table-cell">Level</th>
-                            <th class="font-cinzel text-aion-gold text-xs uppercase tracking-widest px-6 py-4 text-right">Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var (player, idx) in _rankings.Select((p, i) => (p, i)))
-                        {
-                            <tr class="border-b border-gray-800/50 @(idx % 2 == 0 ? "bg-gray-900/40" : "bg-gray-900/20") hover:bg-aion-red/10 transition-colors">
-                                <td class="px-6 py-4">
-                                    @if (player.Rank == 1)
-                                    {
-                                        <span class="font-cinzel font-bold text-lg" style="color: #FFD700;">🥇 1</span>
-                                    }
-                                    else if (player.Rank == 2)
-                                    {
-                                        <span class="font-cinzel font-bold text-lg" style="color: #C0C0C0;">🥈 2</span>
-                                    }
-                                    else if (player.Rank == 3)
-                                    {
-                                        <span class="font-cinzel font-bold text-lg" style="color: #CD7F32;">🥉 3</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="font-cinzel text-gray-400">#@player.Rank</span>
-                                    }
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="font-raleway text-white font-semibold">@player.PlayerName</span>
-                                </td>
-                                <td class="px-6 py-4 hidden md:table-cell">
-                                    <span class="text-gray-300 text-sm">@player.Class</span>
-                                </td>
-                                <td class="px-6 py-4 hidden sm:table-cell">
-                                    <span class="text-gray-300 text-sm">@player.Level</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <span class="text-aion-gold font-semibold">@player.Score.ToString("N0")</span>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
+        @* Rankings coming soon *@
+        <div class="text-center text-gray-500 py-16 border border-gray-700/40 rounded-lg">
+            <p class="font-marcellus text-xl text-gray-400 mb-2">Rankings Coming Soon</p>
+            <p class="text-sm text-gray-600">Leaderboard data will be available in a future update.</p>
+        </div>
     </div>
 </div>
 
 @code {
-    private List<PlayerRanking>? _rankings;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _rankings = await RankingService.GetRankingsAsync();
-    }
+    protected override Task OnInitializedAsync() => Task.CompletedTask;
 }

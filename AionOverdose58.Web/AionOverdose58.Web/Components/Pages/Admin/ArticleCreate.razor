@@ -1,0 +1,93 @@
+@page "/admin/articles/create"
+@layout AdminLayout
+@rendermode InteractiveServer
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Web.Services
+@inject IArticleService ArticleService
+@inject NavigationManager Nav
+
+<PageTitle>Admin — New Article</PageTitle>
+
+<h1 class="admin-title">New Article</h1>
+
+<div class="admin-card">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+        <!-- Title -->
+        <div style="grid-column:1/-1;">
+            <label class="admin-label">Title *</label>
+            <input class="admin-input" @bind="_model.Title" placeholder="Article title…" maxlength="500" />
+        </div>
+
+        <!-- Category -->
+        <div>
+            <label class="admin-label">Category *</label>
+            <select class="admin-select" @bind="_model.Category">
+                @foreach (var cat in Enum.GetValues<ArticleCategory>())
+                {
+                    <option value="@cat">@cat.GetDisplayName()</option>
+                }
+            </select>
+        </div>
+
+        <!-- Posted Date -->
+        <div>
+            <label class="admin-label">Posted Date <small style="color:#555;">(leave blank = draft)</small></label>
+            <input type="date" class="admin-input" @bind="_postedDate" />
+        </div>
+
+        <!-- Image URL -->
+        <div style="grid-column:1/-1;">
+            <label class="admin-label">Image URL</label>
+            <input class="admin-input" @bind="_model.ImageUrl" placeholder="https://…" />
+        </div>
+
+        <!-- Preview -->
+        <div style="grid-column:1/-1;">
+            <label class="admin-label">Preview / Summary <small style="color:#555;">(max 1000 chars)</small></label>
+            <textarea class="admin-textarea" @bind="_model.PreviewContent" maxlength="1000"
+                      placeholder="Short summary shown on listing pages…" rows="3"></textarea>
+        </div>
+    </div>
+
+    <!-- WYSIWYG -->
+    <div style="margin-bottom:1.5rem;">
+        <label class="admin-label">Content (HTML)</label>
+        <QuillEditor @ref="_editor" Height="420px" />
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        <button class="btn-primary" @onclick="SaveAsync" disabled="@_saving">
+            @(_saving ? "Saving…" : "Save Article")
+        </button>
+        <a href="/admin" class="btn-secondary">Cancel</a>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <span style="color:#e55; font-size:0.82rem;">@_error</span>
+        }
+    </div>
+</div>
+
+@code {
+    private Article       _model      = new();
+    private DateTime?     _postedDate;
+    private QuillEditor?  _editor;
+    private bool          _saving;
+    private string        _error = string.Empty;
+
+    private async Task SaveAsync()
+    {
+        _error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_model.Title))
+        { _error = "Title is required."; return; }
+
+        _model.Content    = await (_editor?.GetContentAsync() ?? Task.FromResult(string.Empty));
+        _model.PostedDate = _postedDate;
+
+        _saving = true;
+        await ArticleService.CreateAsync(_model);
+        Nav.NavigateTo("/admin");
+    }
+}

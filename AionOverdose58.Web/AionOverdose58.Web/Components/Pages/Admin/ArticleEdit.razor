@@ -1,0 +1,126 @@
+@page "/admin/articles/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Web.Services
+@inject IArticleService ArticleService
+@inject NavigationManager Nav
+
+<PageTitle>Admin — Edit Article</PageTitle>
+
+@if (_notFound)
+{
+    <h1 class="admin-title">Article Not Found</h1>
+    <a href="/admin" class="btn-secondary">← Back to list</a>
+}
+else if (_model is null)
+{
+    <p style="color:#666;">Loading…</p>
+}
+else
+{
+    <h1 class="admin-title">Edit Article #@Id</h1>
+
+    <div class="admin-card">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+            <!-- Title -->
+            <div style="grid-column:1/-1;">
+                <label class="admin-label">Title *</label>
+                <input class="admin-input" @bind="_model.Title" maxlength="500" />
+            </div>
+
+            <!-- Category -->
+            <div>
+                <label class="admin-label">Category *</label>
+                <select class="admin-select" @bind="_model.Category">
+                    @foreach (var cat in Enum.GetValues<ArticleCategory>())
+                    {
+                        <option value="@cat">@cat.GetDisplayName()</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Posted Date -->
+            <div>
+                <label class="admin-label">Posted Date <small style="color:#555;">(blank = draft)</small></label>
+                <input type="date" class="admin-input" @bind="_postedDate" />
+            </div>
+
+            <!-- Image URL -->
+            <div style="grid-column:1/-1;">
+                <label class="admin-label">Image URL</label>
+                <input class="admin-input" @bind="_model.ImageUrl" placeholder="https://…" />
+            </div>
+
+            <!-- Preview -->
+            <div style="grid-column:1/-1;">
+                <label class="admin-label">Preview / Summary <small style="color:#555;">(max 1000 chars)</small></label>
+                <textarea class="admin-textarea" @bind="_model.PreviewContent" maxlength="1000" rows="3"></textarea>
+            </div>
+        </div>
+
+        <!-- WYSIWYG -->
+        <div style="margin-bottom:1.5rem;">
+            <label class="admin-label">Content (HTML)</label>
+            <QuillEditor @ref="_editor" Value="@_model.Content" Height="420px" />
+        </div>
+
+        <!-- Metadata -->
+        <p style="font-size:0.72rem; color:#444; margin-bottom:1.25rem;">
+            Created: @_model.CreatedOn.ToString("MMM d, yyyy HH:mm") UTC &nbsp;|&nbsp;
+            Last updated: @_model.UpdatedOn.ToString("MMM d, yyyy HH:mm") UTC
+        </p>
+
+        <!-- Actions -->
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+            <button class="btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                @(_saving ? "Saving…" : "Save Changes")
+            </button>
+            <a href="/admin" class="btn-secondary">Cancel</a>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <span style="color:#e55; font-size:0.82rem;">@_error</span>
+            }
+            @if (!string.IsNullOrEmpty(_success))
+            {
+                <span style="color:#5a5; font-size:0.82rem;">@_success</span>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Article?      _model;
+    private DateTime?     _postedDate;
+    private QuillEditor?  _editor;
+    private bool          _saving;
+    private bool          _notFound;
+    private string        _error   = string.Empty;
+    private string        _success = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = await ArticleService.GetByIdAsync(Id);
+        if (_model is null) { _notFound = true; return; }
+        _postedDate = _model.PostedDate;
+    }
+
+    private async Task SaveAsync()
+    {
+        _error = _success = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_model!.Title))
+        { _error = "Title is required."; return; }
+
+        _model.Content    = await (_editor?.GetContentAsync() ?? Task.FromResult(string.Empty));
+        _model.PostedDate = _postedDate;
+
+        _saving = true;
+        await ArticleService.UpdateAsync(_model);
+        _saving  = false;
+        _success = "Saved successfully.";
+    }
+}

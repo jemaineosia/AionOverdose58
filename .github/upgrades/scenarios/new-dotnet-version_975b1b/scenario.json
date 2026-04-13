@@ -3,11 +3,8 @@
   "operationId": "975b1bd7-1047-49d9-a8b6-687d65a2e181",
   "description": "Upgrade solution or project to new version of .NET",
   "startTime": "2026-04-11T03:50:54.0133503Z",
-  "lastUpdateTime": "2026-04-12T02:21:46.0696123Z",
+  "lastUpdateTime": "2026-04-13T13:27:51.4349507Z",
   "stage": "Execution",
-  "properties": {
-    "SelectedScenarioStrategy": "AllAtOnce",
-    "UpgradeTargetFramework": "net10.0"
-  },
+  "properties": {},
   "folderPath": ""
 }

@@ -1,0 +1,232 @@
+@inherits LayoutComponentBase
+
+<div class="admin-shell">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="admin-logo">
+            <img src="/Images/AionOD_logo.png" alt="Admin" class="h-10 w-auto" />
+            <span>Admin Panel</span>
+        </div>
+        <nav class="admin-nav">
+            <NavLink href="/admin"                  class="admin-nav-link" Match="NavLinkMatch.All">📰 Articles</NavLink>
+            <NavLink href="/admin/articles/create"  class="admin-nav-link">➕ New Article</NavLink>
+            <hr class="border-gray-700 my-3" />
+            <a href="/" class="admin-nav-link">← Back to Site</a>
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="admin-main">
+        <div class="admin-content">
+            @Body
+        </div>
+    </main>
+</div>
+
+<style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .admin-shell {
+        display: flex;
+        min-height: 100vh;
+        background: #0f0f0f;
+        color: #e5e5e5;
+        font-family: 'Marcellus', serif;
+    }
+
+    /* ── Sidebar ── */
+    .admin-sidebar {
+        width: 220px;
+        min-height: 100vh;
+        background: #1a1a1a;
+        border-right: 1px solid #2a2a2a;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .admin-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #2a2a2a;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #c9a84c;
+    }
+
+    .admin-nav {
+        padding: 1rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .admin-nav-link {
+        display: block;
+        padding: 0.6rem 0.85rem;
+        color: #aaa;
+        text-decoration: none;
+        font-size: 0.82rem;
+        letter-spacing: 0.05em;
+        border-radius: 4px;
+        transition: background 0.15s, color 0.15s;
+    }
+    .admin-nav-link:hover        { background: #252525; color: #fff; }
+    .admin-nav-link.active       { background: #8b1a1a33; color: #c9a84c; }
+
+    /* ── Main ── */
+    .admin-main {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .admin-content {
+        padding: 2rem 2.5rem;
+        max-width: 1100px;
+    }
+
+    /* ── Shared admin form / table helpers ── */
+    .admin-title {
+        font-size: 1.5rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #fff;
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-card {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        padding: 1.5rem;
+    }
+
+    .admin-label {
+        display: block;
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 0.35rem;
+    }
+
+    .admin-input {
+        width: 100%;
+        background: #111;
+        border: 1px solid #333;
+        color: #e5e5e5;
+        padding: 0.55rem 0.75rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.9rem;
+        border-radius: 3px;
+        transition: border-color 0.15s;
+    }
+    .admin-input:focus { outline: none; border-color: #c9a84c; }
+
+    .admin-select {
+        width: 100%;
+        background: #111;
+        border: 1px solid #333;
+        color: #e5e5e5;
+        padding: 0.55rem 0.75rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.9rem;
+        border-radius: 3px;
+    }
+
+    .admin-textarea {
+        width: 100%;
+        background: #111;
+        border: 1px solid #333;
+        color: #e5e5e5;
+        padding: 0.55rem 0.75rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.9rem;
+        border-radius: 3px;
+        resize: vertical;
+        min-height: 80px;
+    }
+    .admin-textarea:focus { outline: none; border-color: #c9a84c; }
+
+    .btn-primary {
+        background: #8b1a1a;
+        color: #fff;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover   { background: #c0392b; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+        background: transparent;
+        color: #aaa;
+        border: 1px solid #333;
+        padding: 0.6rem 1.5rem;
+        font-family: 'Marcellus', serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: #c9a84c; color: #c9a84c; }
+
+    .btn-danger {
+        background: transparent;
+        color: #e55;
+        border: 1px solid #552222;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-danger:hover { background: #552222; }
+
+    .btn-restore {
+        background: transparent;
+        color: #5a5;
+        border: 1px solid #254025;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-restore:hover { background: #254025; }
+
+    /* ── Quill dark theme overrides ── */
+    .ql-toolbar.ql-snow {
+        background: #252525 !important;
+        border-color: #333 !important;
+    }
+    .ql-toolbar.ql-snow .ql-stroke { stroke: #aaa !important; }
+    .ql-toolbar.ql-snow .ql-fill   { fill:   #aaa !important; }
+    .ql-toolbar.ql-snow .ql-picker-label { color: #aaa !important; }
+    .ql-container.ql-snow  {
+        border-color: #333 !important;
+        font-family: 'Marcellus', serif !important;
+    }
+    .ql-editor { min-height: 300px; color: #e5e5e5 !important; }
+    .ql-editor.ql-blank::before { color: #555 !important; }
+</style>
