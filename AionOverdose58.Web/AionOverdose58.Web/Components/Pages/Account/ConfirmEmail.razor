@@ -1,0 +1,121 @@
+@page "/account/confirm-email"
+@rendermode InteractiveAuto
+@using AionOverdose58.Web.Services
+@inject IAccountService AccountService
+@inject NavigationManager Navigation
+
+<PageTitle>Confirm Email — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center px-4 pt-32 pb-16">
+    <div class="w-full max-w-md">
+        <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-8">
+            @if (_isProcessing)
+            {
+                <div class="text-center py-8">
+                    <div class="text-5xl mb-4">⏳</div>
+                    <h1 class="font-cinzel text-2xl text-white tracking-widest uppercase mb-4">Confirming Email</h1>
+                    <p class="text-gray-400 text-sm font-raleway">Please wait...</p>
+                    <div class="mt-6">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-aion-gold mx-auto"></div>
+                    </div>
+                </div>
+            }
+            else if (_success)
+            {
+                <div class="text-center py-8">
+                    <div class="text-5xl mb-4">✅</div>
+                    <h1 class="font-cinzel text-2xl text-aion-gold tracking-widest uppercase mb-4">Email Confirmed!</h1>
+                    <p class="text-gray-300 text-sm font-raleway mb-6 leading-relaxed">
+                        @_message
+                    </p>
+                    <p class="text-gray-400 text-sm mb-6">
+                        Welcome to Aion Overdose 58! Your account is now fully activated.
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <a href="/account/login" 
+                           class="block w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded text-center">
+                            Login to Your Account
+                        </a>
+                        <a href="/download" 
+                           class="block w-full border-2 border-aion-gold hover:bg-aion-gold/10 text-aion-gold font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded text-center">
+                            Download Game Client
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-8">
+                    <div class="text-5xl mb-4">❌</div>
+                    <h1 class="font-cinzel text-2xl text-red-400 tracking-widest uppercase mb-4">Confirmation Failed</h1>
+                    <p class="text-gray-300 text-sm font-raleway mb-6 leading-relaxed">
+                        @_message
+                    </p>
+                    
+                    <div class="bg-red-900/20 border border-red-500/50 p-4 mb-6 rounded">
+                        <p class="text-red-300 text-sm">
+                            <strong>Common Issues:</strong>
+                        </p>
+                        <ul class="text-left text-red-300 text-sm mt-2 space-y-1">
+                            <li>• The confirmation link may have expired (valid for 24 hours)</li>
+                            <li>• The link may be incomplete or corrupted</li>
+                            <li>• Your email may already be confirmed</li>
+                        </ul>
+                    </div>
+
+                    <div class="space-y-4">
+                        <a href="/account/resend-confirmation" 
+                           class="block w-full bg-aion-gold hover:bg-aion-gold/80 text-aion-dark font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded text-center">
+                            Resend Confirmation Email
+                        </a>
+                        <a href="/account/login" 
+                           class="block w-full border-2 border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-cinzel py-3 uppercase tracking-widest transition-colors duration-300 rounded text-center">
+                            Back to Login
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Code { get; set; }
+
+    private bool _isProcessing = true;
+    private bool _success = false;
+    private string _message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Code))
+        {
+            _isProcessing = false;
+            _success = false;
+            _message = "Invalid confirmation link. Please check your email for the correct link.";
+            return;
+        }
+
+        try
+        {
+            var (success, message) = await AccountService.ConfirmEmailAsync(UserId, Code);
+            _success = success;
+            _message = message;
+        }
+        catch (Exception ex)
+        {
+            _success = false;
+            _message = "An unexpected error occurred. Please try again later.";
+            Console.WriteLine($"Email confirmation error: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+}

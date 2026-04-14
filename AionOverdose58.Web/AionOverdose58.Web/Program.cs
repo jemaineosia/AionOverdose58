@@ -27,6 +27,9 @@ var accountsConnectionString = builder.Configuration.GetConnectionString("AionAc
 builder.Services.AddDbContextFactory<AionAccountsDbContext>(options =>
     options.UseSqlServer(accountsConnectionString));
 
+// Email Settings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
 // ASP.NET Core Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -47,12 +50,22 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.User.RequireUniqueEmail = true;
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
-    // Sign-in settings
-    options.SignIn.RequireConfirmedEmail = false; // Set to true for email verification
-    options.SignIn.RequireConfirmedAccount = false;
+    // Sign-in settings - ENABLE EMAIL CONFIRMATION
+    options.SignIn.RequireConfirmedEmail = true;
+    options.SignIn.RequireConfirmedAccount = true;
+
+    // Token providers
+    options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
+    options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultEmailProvider;
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
+
+// Token lifespan configuration
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(24); // Email confirmation valid for 24 hours
+});
 
 // Configure cookie settings
 builder.Services.ConfigureApplicationCookie(options =>
@@ -70,6 +83,7 @@ builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 

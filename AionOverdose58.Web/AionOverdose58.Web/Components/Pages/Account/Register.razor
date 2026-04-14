@@ -2,6 +2,7 @@
 @rendermode InteractiveAuto
 @using AionOverdose58.Web.Services
 @inject IAccountService AccountService
+@inject NavigationManager Navigation
 
 <PageTitle>Register — Aion Overdose 58</PageTitle>
 
@@ -157,11 +158,13 @@
             }
 
             // Call the registration service
+            var baseUrl = Navigation.BaseUri.TrimEnd('/');
             var (success, message) = await AccountService.RegisterAccountAsync(
                 _registerModel.Username,
                 _registerModel.Email,
                 _registerModel.Password,
-                _registerModel.PinCode
+                _registerModel.PinCode,
+                baseUrl
             );
 
             if (success)

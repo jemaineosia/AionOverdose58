@@ -120,6 +120,12 @@
                 return;
             }
 
+            if (result.IsNotAllowed)
+            {
+                _errorMessage = "Please confirm your email address before logging in. Check your inbox for the confirmation link.";
+                return;
+            }
+
             // If username login failed, try email
             if (!result.Succeeded && !_loginModel.UsernameOrEmail.Contains("@"))
             {
