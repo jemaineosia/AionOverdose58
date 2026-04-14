@@ -1,5 +1,7 @@
 @page "/account/register"
 @rendermode InteractiveAuto
+@using AionOverdose58.Web.Services
+@inject IAccountService AccountService
 
 <PageTitle>Register — Aion Overdose 58</PageTitle>
 
@@ -50,6 +52,40 @@
                     <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-red-400 text-xs mt-1" />
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">PIN Code (4-6 digits)</label>
+                    <InputText @bind-Value="_registerModel.PinCode"
+                               type="password"
+                               maxlength="6"
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                               placeholder="Enter 4-6 digit PIN" />
+                    <ValidationMessage For="@(() => _registerModel.PinCode)" class="text-red-400 text-xs mt-1" />
+                    <p class="text-gray-500 text-xs mt-1">Used for account security and recovery</p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Verify You're Human</label>
+                    <div class="bg-gray-800/80 border border-gray-600 rounded p-4 mb-2">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-mono text-2xl text-white tracking-wider select-none" style="letter-spacing: 0.5em;">
+                                @_captchaCode
+                            </div>
+                            <button type="button"
+                                    @onclick="GenerateCaptcha"
+                                    class="text-aion-gold hover:text-white transition-colors"
+                                    title="Regenerate Captcha">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <InputText @bind-Value="_registerModel.CaptchaInput"
+                                   class="w-full bg-gray-900/80 border border-gray-600 text-white px-4 py-2 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
+                                   placeholder="Enter the code above" />
+                    </div>
+                    <ValidationMessage For="@(() => _registerModel.CaptchaInput)" class="text-red-400 text-xs mt-1" />
+                </div>
+
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="bg-aion-red/20 border border-aion-red/50 text-red-300 text-sm px-4 py-3 rounded mb-4">
@@ -64,8 +100,9 @@
                 }
 
                 <button type="submit"
-                        class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded">
-                    Register
+                        disabled="@_isProcessing"
+                        class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                    @(_isProcessing ? "Processing..." : "Register")
                 </button>
             </EditForm>
 
@@ -83,30 +120,101 @@
     private RegisterModel _registerModel = new();
     private string? _errorMessage;
     private string? _successMessage;
+    private string _captchaCode = string.Empty;
+    private bool _isProcessing = false;
 
-    private void HandleRegister()
+    protected override void OnInitialized()
     {
-        // TODO: Implement registration logic
+        GenerateCaptcha();
+    }
+
+    private void GenerateCaptcha()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude confusing characters
+        var random = new Random();
+        _captchaCode = new string(Enumerable.Range(0, 6)
+            .Select(_ => chars[random.Next(chars.Length)])
+            .ToArray());
+    }
+
+    private async Task HandleRegister()
+    {
+        if (_isProcessing) return;
+
         _errorMessage = null;
-        _successMessage = "Registration not yet implemented. Coming soon!";
+        _successMessage = null;
+        _isProcessing = true;
+
+        try
+        {
+            // Validate Captcha
+            if (!string.Equals(_registerModel.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
+            {
+                _errorMessage = "Invalid captcha code. Please try again.";
+                GenerateCaptcha();
+                _registerModel.CaptchaInput = string.Empty;
+                return;
+            }
+
+            // Call the registration service
+            var (success, message) = await AccountService.RegisterAccountAsync(
+                _registerModel.Username,
+                _registerModel.Email,
+                _registerModel.Password,
+                _registerModel.PinCode
+            );
+
+            if (success)
+            {
+                _successMessage = message;
+                _registerModel = new(); // Clear form
+            }
+            else
+            {
+                _errorMessage = message;
+            }
+
+            GenerateCaptcha();
+            _registerModel.CaptchaInput = string.Empty;
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
     }
 
     private class RegisterModel
     {
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.MinLength(3)]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Username is required")]
+        [System.ComponentModel.DataAnnotations.StringLength(20, MinimumLength = 6, 
+            ErrorMessage = "Username must be between 6 and 20 characters")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[a-zA-Z0-9_]+$", 
+            ErrorMessage = "Username can only contain letters, numbers, and underscores")]
         public string Username { get; set; } = string.Empty;
 
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.EmailAddress]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email address")]
+        [System.ComponentModel.DataAnnotations.StringLength(256, ErrorMessage = "Email cannot exceed 256 characters")]
         public string Email { get; set; } = string.Empty;
 
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.MinLength(6)]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required")]
+        [System.ComponentModel.DataAnnotations.StringLength(16, MinimumLength = 6, 
+            ErrorMessage = "Password must be between 6 and 16 characters")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,16}$", 
+            ErrorMessage = "Password must contain at least one letter and one number")]
         public string Password { get; set; } = string.Empty;
 
-        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please confirm your password")]
         [System.ComponentModel.DataAnnotations.Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "PIN code is required")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^\d{4,6}$", ErrorMessage = "PIN must be 4-6 digits only")]
+        [System.ComponentModel.DataAnnotations.StringLength(6, MinimumLength = 4, 
+            ErrorMessage = "PIN must be between 4 and 6 digits")]
+        public string PinCode { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please enter the captcha code")]
+        public string CaptchaInput { get; set; } = string.Empty;
     }
 }
