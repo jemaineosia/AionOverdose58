@@ -1,0 +1,247 @@
+@page "/account/pin-recovery"
+@rendermode InteractiveAuto
+@using AionOverdose58.Web.Services
+@inject IAccountService AccountService
+@inject NavigationManager Navigation
+
+<PageTitle>PIN Recovery — Aion Overdose 58</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center px-4 pt-32 pb-16">
+    <div class="w-full max-w-md">
+        <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-8">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-4">🔢</div>
+                <h1 class="font-cinzel text-2xl text-white tracking-widest uppercase mb-2">PIN Recovery</h1>
+                <p class="text-gray-400 text-sm font-raleway">Recover your account using your PIN</p>
+            </div>
+
+            @if (!_emailSent)
+            {
+                <EditForm Model="_model" OnValidSubmit="HandlePinRecovery" FormName="PinRecoveryForm">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Email Address</label>
+                        <InputText @bind-Value="_model.Email"
+                                   type="email"
+                                   class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                                   placeholder="your@email.com" />
+                        <ValidationMessage For="@(() => _model.Email)" class="text-red-400 text-xs mt-1" />
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">PIN Code</label>
+                        <InputText @bind-Value="_model.PinCode"
+                                   type="password"
+                                   maxlength="6"
+                                   class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
+                                   placeholder="Enter your 4-6 digit PIN" />
+                        <ValidationMessage For="@(() => _model.PinCode)" class="text-red-400 text-xs mt-1" />
+                        <p class="text-gray-500 text-xs mt-2">The PIN you set during registration</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Verify You're Human</label>
+                        <div class="bg-gray-800/80 border border-gray-600 rounded p-4 mb-2">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="font-mono text-2xl text-white tracking-wider select-none" style="letter-spacing: 0.5em;">
+                                    @_captchaCode
+                                </div>
+                                <button type="button"
+                                        @onclick="GenerateCaptcha"
+                                        class="text-aion-gold hover:text-white transition-colors"
+                                        title="Regenerate Captcha">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <InputText @bind-Value="_model.CaptchaInput"
+                                       class="w-full bg-gray-900/80 border border-gray-600 text-white px-4 py-2 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
+                                       placeholder="Enter the code above" />
+                        </div>
+                        <ValidationMessage For="@(() => _model.CaptchaInput)" class="text-red-400 text-xs mt-1" />
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="bg-aion-red/20 border border-aion-red/50 text-red-300 text-sm px-4 py-3 rounded mb-4">
+                            @_errorMessage
+                        </div>
+                    }
+
+                    <button type="submit"
+                            disabled="@_isProcessing"
+                            class="w-full bg-aion-gold hover:bg-aion-gold/80 text-aion-dark font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed mb-4">
+                        @(_isProcessing ? "Verifying..." : "Verify PIN")
+                    </button>
+
+                    <div class="text-center space-y-2">
+                        <p class="text-gray-500 text-sm">Don't remember your PIN?</p>
+                        <a href="/account/forgot-password" class="block text-aion-gold hover:text-white transition-colors text-sm">
+                            Try Password Reset Instead
+                        </a>
+                        <a href="/account/login" class="block text-gray-500 hover:text-white transition-colors text-sm">
+                            Back to Login
+                        </a>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <div class="text-center py-6">
+                    <div class="text-5xl mb-4">✅</div>
+                    <h2 class="text-aion-gold text-xl font-cinzel uppercase mb-4">PIN Verified!</h2>
+                    <p class="text-gray-300 text-sm mb-6 leading-relaxed">
+                        @_successMessage
+                    </p>
+                    
+                    <div class="bg-green-900/20 border border-green-500/50 p-4 mb-6 rounded">
+                        <p class="text-green-300 text-sm">
+                            <strong>✓ Success!</strong><br />
+                            Check your email for the password reset link.
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-900/20 border border-blue-500/50 p-4 mb-6 rounded">
+                        <p class="text-blue-300 text-sm">
+                            <strong>📌 Next Steps:</strong><br />
+                            • Check your email inbox (and spam)<br />
+                            • Click the reset link<br />
+                            • Create a new password<br />
+                            • Keep your PIN safe for future use
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button @onclick="ResetForm"
+                                class="w-full border-2 border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-cinzel py-3 uppercase tracking-widest transition-colors duration-300 rounded">
+                            Try Another Account
+                        </button>
+                        <a href="/account/login" 
+                           class="block w-full text-center text-aion-gold hover:text-white transition-colors text-sm py-2">
+                            Back to Login
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Help Section -->
+        <div class="mt-6 bg-gray-900/60 border border-gray-700/30 rounded-lg p-6">
+            <h3 class="text-white font-cinzel uppercase text-sm mb-3">About PIN Recovery</h3>
+            <ul class="text-gray-400 text-xs space-y-2">
+                <li class="flex items-start gap-2">
+                    <span class="text-aion-gold">•</span>
+                    <span>PIN is the 4-6 digit code you set during registration</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-aion-gold">•</span>
+                    <span>Use this if you can't access your email</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-aion-gold">•</span>
+                    <span>Your email must be confirmed to use PIN recovery</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-aion-gold">•</span>
+                    <span>For security, results are not shown until email is checked</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PinRecoveryModel _model = new();
+    private bool _isProcessing = false;
+    private bool _emailSent = false;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private string _captchaCode = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        GenerateCaptcha();
+    }
+
+    private void GenerateCaptcha()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var random = new Random();
+        _captchaCode = new string(Enumerable.Range(0, 6)
+            .Select(_ => chars[random.Next(chars.Length)])
+            .ToArray());
+    }
+
+    private async Task HandlePinRecovery()
+    {
+        if (_isProcessing) return;
+
+        _errorMessage = null;
+        _isProcessing = true;
+
+        try
+        {
+            // Validate Captcha
+            if (!string.Equals(_model.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
+            {
+                _errorMessage = "Invalid captcha code. Please try again.";
+                GenerateCaptcha();
+                _model.CaptchaInput = string.Empty;
+                return;
+            }
+
+            var baseUrl = Navigation.BaseUri.TrimEnd('/');
+            var (success, message) = await AccountService.RecoverAccountWithPinAsync(_model.Email, _model.PinCode, baseUrl);
+
+            if (success)
+            {
+                _emailSent = true;
+                _successMessage = message;
+            }
+            else
+            {
+                _errorMessage = message;
+            }
+
+            GenerateCaptcha();
+            _model.CaptchaInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.WriteLine($"PIN recovery error: {ex.Message}");
+            GenerateCaptcha();
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _emailSent = false;
+        _model = new();
+        _errorMessage = null;
+        _successMessage = null;
+        GenerateCaptcha();
+    }
+
+    private class PinRecoveryModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "PIN code is required")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^\d{4,6}$", ErrorMessage = "PIN must be 4-6 digits only")]
+        [System.ComponentModel.DataAnnotations.StringLength(6, MinimumLength = 4, 
+            ErrorMessage = "PIN must be between 4 and 6 digits")]
+        public string PinCode { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please enter the captcha code")]
+        public string CaptchaInput { get; set; } = string.Empty;
+    }
+}

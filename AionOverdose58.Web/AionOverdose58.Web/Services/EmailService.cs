@@ -12,6 +12,7 @@ public interface IEmailService
     Task SendConfirmationEmailAsync(string toEmail, string userName, string confirmationLink);
     Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetLink);
     Task SendWelcomeEmailAsync(string toEmail, string userName);
+    Task SendPasswordChangedNotificationAsync(string toEmail, string userName, string ipAddress);
 }
 
 public class EmailService : IEmailService
@@ -400,6 +401,136 @@ public class EmailService : IEmailService
         <div class=""footer"">
             <p>Aion Overdose 58 - Middle Rate • Official Build • Aion 4.9</p>
             <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+        await SendEmailAsync(toEmail, subject, htmlMessage);
+    }
+
+    public async Task SendPasswordChangedNotificationAsync(string toEmail, string userName, string ipAddress)
+    {
+        var subject = "Password Changed - Aion Overdose 58";
+        var htmlMessage = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            background-color: #0a0e1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #1a1f2e;
+            border: 1px solid #c9a84c;
+            border-radius: 8px;
+            overflow: hidden;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #8b1a1a 0%, #c9a84c 100%);
+            padding: 30px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            color: #ffffff;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }}
+        .content {{
+            padding: 40px 30px;
+        }}
+        .content h2 {{
+            color: #c9a84c;
+            margin-top: 0;
+        }}
+        .content p {{
+            line-height: 1.6;
+            color: #cccccc;
+        }}
+        .info-box {{
+            background-color: #0f1419;
+            border-left: 4px solid #c9a84c;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+        .warning {{
+            background-color: #8b1a1a33;
+            border-left: 4px solid #8b1a1a;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+        .button {{
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 20px 0;
+            background: linear-gradient(135deg, #8b1a1a 0%, #b8321f 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }}
+        .footer {{
+            background-color: #0f1419;
+            padding: 20px;
+            text-align: center;
+            color: #666666;
+            font-size: 12px;
+        }}
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <div class=""header"">
+            <h1>☠ Aion Overdose 58 ☠</h1>
+        </div>
+        <div class=""content"">
+            <h2>🔐 Password Changed</h2>
+            <p>Hello {userName},</p>
+            <p>This is a notification that your password was recently changed.</p>
+
+            <div class=""info-box"">
+                <strong>Change Details:</strong><br>
+                • Date/Time: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC<br>
+                • IP Address: {ipAddress}<br>
+                • Action: Password Reset
+            </div>
+
+            <p>If you made this change, you can safely ignore this email. Your account is secure.</p>
+
+            <div class=""warning"">
+                <strong>⚠️ Didn't Change Your Password?</strong><br><br>
+                If you did NOT request this password change, your account may be compromised. Please take action immediately:
+                <ul>
+                    <li>Reset your password again using a secure device</li>
+                    <li>Enable two-factor authentication (if available)</li>
+                    <li>Contact our support team</li>
+                    <li>Review recent account activity</li>
+                </ul>
+            </div>
+
+            <p><strong>Security Recommendations:</strong></p>
+            <ul style=""color: #cccccc;"">
+                <li>Use a unique password for this account</li>
+                <li>Never share your password with anyone</li>
+                <li>Be cautious of phishing attempts</li>
+                <li>Keep your email account secure</li>
+            </ul>
+
+            <p>If you have any concerns about your account security, please contact our support team immediately.</p>
+        </div>
+        <div class=""footer"">
+            <p>Aion Overdose 58 - Middle Rate • Official Build • Aion 4.9</p>
+            <p>This is an automated security notification. Please do not reply to this email.</p>
         </div>
     </div>
 </body>

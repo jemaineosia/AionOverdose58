@@ -67,6 +67,13 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
     options.TokenLifespan = TimeSpan.FromHours(24); // Email confirmation valid for 24 hours
 });
 
+// Separate token lifespan for password reset (1 hour for security)
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV3;
+    options.IterationCount = 10000;
+});
+
 // Configure cookie settings
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -84,6 +91,9 @@ builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Add HttpContextAccessor for IP address tracking
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

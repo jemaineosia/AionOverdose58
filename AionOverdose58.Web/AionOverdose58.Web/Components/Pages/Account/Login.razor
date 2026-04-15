@@ -43,7 +43,10 @@
                                      class="w-4 h-4 bg-gray-800 border-gray-600 rounded focus:ring-aion-gold" />
                         <span>Remember me</span>
                     </label>
-                    <a href="/account/forgot-password" class="text-xs text-aion-gold hover:text-white transition-colors">Forgot Password?</a>
+                    <div class="flex flex-col items-end gap-1">
+                        <a href="/account/forgot-password" class="text-xs text-aion-gold hover:text-white transition-colors">Forgot Password?</a>
+                        <a href="/account/pin-recovery" class="text-xs text-gray-500 hover:text-aion-gold transition-colors">Recover with PIN</a>
+                    </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(_errorMessage))
