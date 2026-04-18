@@ -3,6 +3,8 @@
 @using AionOverdose58.Web.Services
 @inject IAccountService AccountService
 @inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject IAuditLogger AuditLogger
 
 <PageTitle>Register — Aion Overdose 58</PageTitle>
 
@@ -116,10 +118,12 @@
     private string? _errorMessage;
     private string _captchaCode = string.Empty;
     private bool _isProcessing = false;
+    private string _clientIp = "Unknown";
 
     protected override void OnInitialized()
     {
         GenerateCaptcha();
+        _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
     }
 
     private void GenerateCaptcha()
@@ -144,6 +148,7 @@
             if (!string.Equals(_registerModel.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
             {
                 _errorMessage = "Invalid captcha code. Please try again.";
+                AuditLogger.LogFormEvent("Register", false, _registerModel.Username, _clientIp, "Invalid captcha");
                 GenerateCaptcha();
                 _registerModel.CaptchaInput = string.Empty;
                 return;
@@ -161,11 +166,14 @@
 
             if (success)
             {
+                AuditLogger.LogFormEvent("Register", true, _registerModel.Username, _clientIp,
+                    $"New account registered ({_registerModel.Email})");
                 Navigation.NavigateTo($"/account/login?registered=1&msg={Uri.EscapeDataString(message)}");
                 return;
             }
             else
             {
+                AuditLogger.LogFormEvent("Register", false, _registerModel.Username, _clientIp, message);
                 _errorMessage = message;
             }
 

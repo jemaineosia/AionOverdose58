@@ -15,6 +15,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Article> Articles => Set<Article>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<AppLog> AppLogs => Set<AppLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +54,21 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.RegisteredDate).IsRequired();
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
+        });
+
+        // AppLogs — table is auto-created by Serilog, EF is read-only
+        modelBuilder.Entity<AppLog>(entity =>
+        {
+            entity.ToTable("AppLogs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("Id");
+            entity.Property(e => e.Message).HasColumnName("Message");
+            entity.Property(e => e.Level).HasColumnName("Level");
+            entity.Property(e => e.TimeStamp).HasColumnName("TimeStamp");
+            entity.Property(e => e.Exception).HasColumnName("Exception");
+            entity.Property(e => e.Username).HasColumnName("Username");
+            entity.Property(e => e.IpAddress).HasColumnName("IpAddress");
+            entity.Property(e => e.Path).HasColumnName("Path");
         });
     }
 }

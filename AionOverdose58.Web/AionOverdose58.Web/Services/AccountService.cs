@@ -212,18 +212,17 @@ public class AccountService : IAccountService
                 user.AionAccountUid = aionAccountUid;
                 await _userManager.UpdateAsync(user);
 
-                // Always sync the password to account_data in case the stored procedure
-                // returned an existing account UID without updating its password
+                // Sync password to user_auth in case the SP returned an existing account UID
                 await aionDb.Database.ExecuteSqlRawAsync(
-                    @"UPDATE account_data SET 
+                    @"UPDATE user_auth SET 
                         password = @password,
                         passwd   = @passwd,
                         web_password = @web_password
-                      WHERE id = @uid",
+                      WHERE account = @account",
                     new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(password)),
                     new SqlParameter("@passwd", AionEncrypt.EncryptWebPassword(password)),
                     new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(password).ToUpper()),
-                    new SqlParameter("@uid", aionAccountUid)
+                    new SqlParameter("@account", username)
                 );
             }
             else
@@ -242,7 +241,11 @@ public class AccountService : IAccountService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error registering account for username: {Username}", username);
+#if DEBUG
+            return (false, $"[DEBUG] {ex.GetType().Name}: {ex.Message}");
+#else
             return (false, "An error occurred during registration. Please try again.");
+#endif
         }
     }
 
@@ -493,15 +496,15 @@ public class AccountService : IAccountService
                 {
                     await using var aionDb = await _aionDbFactory.CreateDbContextAsync();
                     await aionDb.Database.ExecuteSqlRawAsync(
-                        @"UPDATE account_data SET 
+                        @"UPDATE user_auth SET 
                             password = @password,
                             passwd   = @passwd,
                             web_password = @web_password
-                          WHERE id = @uid",
+                          WHERE account = @account",
                         new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(newPassword)),
                         new SqlParameter("@passwd",   AionEncrypt.EncryptWebPassword(newPassword)),
                         new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(newPassword).ToUpper()),
-                        new SqlParameter("@uid", user.AionAccountUid.Value));
+                        new SqlParameter("@account", user.UserName!));
                 }
                 catch (Exception ex)
                 {

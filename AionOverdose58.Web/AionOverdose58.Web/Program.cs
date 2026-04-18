@@ -5,10 +5,71 @@ using AionOverdose58.Web.Components;
 using AionOverdose58.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.MSSqlServer;
+using System.Collections.ObjectModel;
+using System.Data;
+using System.Collections.ObjectModel;
+using System.Data;
+
+// ── Bootstrap logger (captures startup errors before full config loads) ──
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Warning()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ── Serilog: structured logging to SQL Server (AionGameCP) + rolling file ──
+var logConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+// Add a short connect timeout so a slow/unavailable DB never blocks startup
+var logConnWithTimeout = logConnectionString.TrimEnd(';') + ";Connect Timeout=5;";
+
+var columnOptions = new ColumnOptions();
+columnOptions.Store.Remove(StandardColumn.Properties);   // remove XML blob we don't need
+columnOptions.Store.Add(StandardColumn.LogEvent);        // add JSON instead
+columnOptions.LogEvent.DataLength = 4000;
+columnOptions.TimeStamp.NonClusteredIndex = true;
+columnOptions.AdditionalColumns = new Collection<SqlColumn>
+{
+    new SqlColumn { ColumnName = "Username",  DataType = SqlDbType.NVarChar, DataLength = 256, AllowNull = true },
+    new SqlColumn { ColumnName = "IpAddress", DataType = SqlDbType.NVarChar, DataLength = 45,  AllowNull = true },
+    new SqlColumn { ColumnName = "Path",      DataType = SqlDbType.NVarChar, DataLength = 1000, AllowNull = true },
+};
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        restrictedToMinimumLevel: LogEventLevel.Information,
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: "logs/app-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        restrictedToMinimumLevel: LogEventLevel.Warning,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.MSSqlServer(
+        connectionString: logConnWithTimeout,
+        sinkOptions: new MSSqlServerSinkOptions
+        {
+            TableName = "AppLogs",
+            AutoCreateSqlTable = true,
+            BatchPostingLimit = 50,
+            BatchPeriod = TimeSpan.FromSeconds(5)
+        },
+        restrictedToMinimumLevel: LogEventLevel.Information,
+        columnOptions: columnOptions)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -101,6 +162,7 @@ builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
 builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add HttpContextAccessor for IP address tracking
@@ -127,14 +189,15 @@ else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 // Enable authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Log every page request with username + IP
+app.UseMiddleware<AionOverdose58.Web.Services.RequestLoggingMiddleware>();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -143,4 +206,16 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(AionOverdose58.Web.Client._Imports).Assembly);
 
-app.Run();
+try
+{
+    Log.Information("Application starting up");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

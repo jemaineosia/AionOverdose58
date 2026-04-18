@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager Navigation
+@inject AionOverdose58.Web.Services.IAuditLogger AuditLogger
 
 <PageTitle>Login — Aion Overdose 58</PageTitle>
 
@@ -130,8 +131,11 @@
             }
         }
 
+        var ip = HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+
         if (result.Succeeded)
         {
+            AuditLogger.LogFormEvent("Login", true, Input!.UsernameOrEmail, ip, "Logged in");
             HttpContext?.Response.Redirect("/");
             return;
         }
@@ -139,15 +143,18 @@
         if (result.IsLockedOut)
         {
             _errorMessage = "Account locked due to multiple failed login attempts. Please try again later.";
+            AuditLogger.LogFormEvent("Login", false, Input!.UsernameOrEmail, ip, "Account locked out");
             return;
         }
 
         if (result.IsNotAllowed)
         {
             _errorMessage = "Please confirm your email address before logging in. Check your inbox for the confirmation link.";
+            AuditLogger.LogFormEvent("Login", false, Input!.UsernameOrEmail, ip, "Email not confirmed");
             return;
         }
 
+        AuditLogger.LogFormEvent("Login", false, Input!.UsernameOrEmail, ip, "Invalid credentials");
         _errorMessage = "Invalid username/email or password.";
     }
 

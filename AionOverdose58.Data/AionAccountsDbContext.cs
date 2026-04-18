@@ -19,9 +19,6 @@ public class AionAccountsDbContext : DbContext
     public DbSet<AionUserAuth> UserAuths => Set<AionUserAuth>();
     public DbSet<AionUserInfo> UserInfos => Set<AionUserInfo>();
 
-    // Additional tables
-    public DbSet<AionAccountData> AccountData => Set<AionAccountData>();
-    public DbSet<AionAccountTime> AccountTime => Set<AionAccountTime>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,32 +84,5 @@ public class AionAccountsDbContext : DbContext
             entity.Property(e => e.Kind).HasColumnName("kind").HasDefaultValue(99);
         });
 
-        // Configure AionAccountData (account_data table)
-        modelBuilder.Entity<AionAccountData>(entity =>
-        {
-            entity.ToTable("account_data");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(45).IsRequired();
-            entity.Property(e => e.Password).HasColumnName("password").IsRequired();
-            entity.Property(e => e.AccessLevel).HasColumnName("access_level").HasDefaultValue(0);
-            entity.Property(e => e.MembershipLevel).HasColumnName("membership").HasDefaultValue((byte)0);
-            entity.Property(e => e.Toll).HasColumnName("toll").HasDefaultValue(0L);
-            entity.Property(e => e.LastServer).HasColumnName("last_server");
-            entity.Property(e => e.LastIp).HasColumnName("last_ip").HasMaxLength(20);
-            entity.Property(e => e.IpForce).HasColumnName("ip_force").HasMaxLength(20);
-            entity.Property(e => e.Activated).HasColumnName("activated");
-        });
-
-        // Configure AionAccountTime (account_time table)
-        modelBuilder.Entity<AionAccountTime>(entity =>
-        {
-            entity.ToTable("account_time");
-            entity.HasKey(e => e.AccountId);
-            entity.Property(e => e.AccountId).HasColumnName("account_id");
-            entity.Property(e => e.LastActive).HasColumnName("last_active");
-            entity.Property(e => e.ExpansionPass).HasColumnName("expension_pass");
-            entity.Property(e => e.PenaltyEnd).HasColumnName("penalty_end");
-        });
     }
 }

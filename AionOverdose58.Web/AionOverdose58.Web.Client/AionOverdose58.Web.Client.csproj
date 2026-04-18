@@ -13,6 +13,18 @@
     <BlazorEnableCompression>false</BlazorEnableCompression>
   </PropertyGroup>
 
+  <!--
+    Auto-clean stale compressed-asset cache so the duplicate-key SDK bug never
+    fires, even if the obj folder was created before BlazorEnableCompression=false
+    was set or after switching between Debug and Release builds.
+  -->
+  <Target Name="CleanStaleWasmCompressionCache"
+          BeforeTargets="ResolveStaticWebAssetsInputs"
+          Condition="'$(Configuration)' == 'Debug'">
+    <RemoveDir Directories="$(IntermediateOutputPath)compressed"    ContinueOnError="true" />
+    <RemoveDir Directories="$(IntermediateOutputPath)staticwebassets" ContinueOnError="true" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
   </ItemGroup>

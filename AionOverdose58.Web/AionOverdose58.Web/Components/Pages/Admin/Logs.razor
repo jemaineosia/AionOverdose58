@@ -1,0 +1,199 @@
+@page "/admin/logs"
+@rendermode InteractiveServer
+@using AionOverdose58.Data
+@using AionOverdose58.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Application Logs — Admin</PageTitle>
+
+<div class="min-h-screen pt-56 pb-16 px-4">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Header -->
+        <div class="mb-8 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <a href="/admin" class="text-gray-500 hover:text-aion-gold text-xs uppercase tracking-widest transition-colors">← Admin</a>
+                <h1 class="font-cinzel text-3xl text-white tracking-widest uppercase mt-3">Application Logs</h1>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-500 font-raleway mt-10">
+                Total shown: <span class="text-aion-gold font-cinzel">@_logs.Count</span>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-3 mb-6">
+            <select @bind="_levelFilter" @bind:after="LoadLogs"
+                    class="bg-gray-800 border border-gray-600 text-white text-sm rounded px-3 py-2 focus:outline-none focus:border-aion-gold/50">
+                <option value="">All Levels</option>
+                <option value="Information">Information</option>
+                <option value="Warning">Warning</option>
+                <option value="Error">Error</option>
+                <option value="Fatal">Fatal</option>
+            </select>
+
+            <input @bind="_usernameFilter" @bind:event="oninput" @bind:after="LoadLogs"
+                   type="text" placeholder="Filter by username..."
+                   class="bg-gray-800 border border-gray-600 text-white text-sm rounded px-3 py-2 w-44 focus:outline-none focus:border-aion-gold/50 placeholder-gray-600" />
+
+            <input @bind="_ipFilter" @bind:event="oninput" @bind:after="LoadLogs"
+                   type="text" placeholder="Filter by IP..."
+                   class="bg-gray-800 border border-gray-600 text-white text-sm rounded px-3 py-2 w-36 focus:outline-none focus:border-aion-gold/50 placeholder-gray-600" />
+
+            <input @bind="_pathFilter" @bind:event="oninput" @bind:after="LoadLogs"
+                   type="text" placeholder="Filter by path..."
+                   class="bg-gray-800 border border-gray-600 text-white text-sm rounded px-3 py-2 w-48 focus:outline-none focus:border-aion-gold/50 placeholder-gray-600" />
+
+            <input @bind="_search" @bind:event="oninput" @bind:after="LoadLogs"
+                   type="text" placeholder="Search message..."
+                   class="bg-gray-800 border border-gray-600 text-white text-sm rounded px-3 py-2 w-56 focus:outline-none focus:border-aion-gold/50 placeholder-gray-600" />
+
+            <button @onclick="LoadLogs"
+                    class="bg-aion-teal/20 border border-aion-teal/40 text-aion-gold text-xs uppercase tracking-widest px-4 py-2 rounded hover:bg-aion-teal/30 transition-colors">
+                Refresh
+            </button>
+
+            <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none ml-2">
+                <input type="checkbox" @bind="_formOnly" @bind:after="LoadLogs"
+                       class="w-4 h-4 bg-gray-800 border-gray-600 rounded" />
+                Form events only
+            </label>
+
+            <button @onclick="ClearOldLogs"
+                    class="bg-aion-red/10 border border-aion-red/30 text-aion-crimson text-xs uppercase tracking-widest px-4 py-2 rounded hover:bg-aion-red/20 transition-colors ml-auto">
+                Clear &gt; 30 Days
+            </button>
+        </div>
+
+        @if (_loading)
+        {
+            <div class="text-center py-16 text-aion-gold font-cinzel tracking-widest animate-pulse">Loading...</div>
+        }
+        else if (_logs.Count == 0)
+        {
+            <div class="text-center py-16 border border-gray-700/40 rounded-lg">
+                <p class="font-cinzel text-gray-400 uppercase tracking-widest">No logs found</p>
+            </div>
+        }
+        else
+        {
+            <!-- Table -->
+            <div class="overflow-x-auto rounded-lg border border-gray-700/40">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-900/80 border-b border-gray-700/60">
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal whitespace-nowrap">Time</th>
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal">Level</th>
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal">User</th>
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal">IP</th>
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal">Path</th>
+                            <th class="text-left px-4 py-3 text-aion-gold font-cinzel text-xs uppercase tracking-widest font-normal">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in _logs)
+                        {
+                            <tr class="border-b border-gray-800/60 hover:bg-gray-800/30 transition-colors @(log.Exception != null ? LevelRowClass(log.Level) : "")">
+                                <td class="px-4 py-2.5 text-gray-500 text-xs font-mono whitespace-nowrap">@log.TimeStamp.ToString("MM-dd HH:mm:ss")</td>
+                                <td class="px-4 py-2.5 whitespace-nowrap">
+                                    <span class="@LevelBadgeClass(log.Level) text-xs font-cinzel uppercase tracking-widest px-2 py-0.5 rounded">@log.Level</span>
+                                </td>
+                                <td class="px-4 py-2.5 text-gray-300 text-xs whitespace-nowrap">
+                                    @if (!string.IsNullOrEmpty(log.Username) && log.Username != "Anonymous")
+                                    {
+                                        <span class="text-aion-gold">@log.Username</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-600">—</span>
+                                    }
+                                </td>
+                                <td class="px-4 py-2.5 text-gray-400 text-xs font-mono whitespace-nowrap">@(log.IpAddress ?? "—")</td>
+                                <td class="px-4 py-2.5 text-gray-400 text-xs max-w-xs truncate" title="@log.Path">@(log.Path ?? "—")</td>
+                                <td class="px-4 py-2.5 text-gray-200 text-xs max-w-md">
+                                    <div class="truncate" title="@log.Message">@log.Message</div>
+                                    @if (!string.IsNullOrEmpty(log.Exception))
+                                    {
+                                        <details class="mt-1">
+                                            <summary class="text-aion-crimson text-xs cursor-pointer hover:text-white transition-colors select-none">Exception ▸</summary>
+                                            <pre class="mt-1 text-xs text-gray-400 bg-black/40 rounded p-2 overflow-x-auto whitespace-pre-wrap break-all font-mono max-h-48">@log.Exception</pre>
+                                        </details>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    private List<AppLog> _logs = [];
+    private bool _loading = true;
+    private string _levelFilter = string.Empty;
+    private string _search = string.Empty;
+    private string _usernameFilter = string.Empty;
+    private string _ipFilter = string.Empty;
+    private string _pathFilter = string.Empty;
+    private bool _formOnly = false;
+
+    protected override async Task OnInitializedAsync() => await LoadLogs();
+
+    private async Task LoadLogs()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var query = db.AppLogs.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(_levelFilter))
+            query = query.Where(l => l.Level == _levelFilter);
+        if (!string.IsNullOrWhiteSpace(_usernameFilter))
+            query = query.Where(l => l.Username != null && l.Username.Contains(_usernameFilter));
+        if (!string.IsNullOrWhiteSpace(_ipFilter))
+            query = query.Where(l => l.IpAddress != null && l.IpAddress.Contains(_ipFilter));
+        if (!string.IsNullOrWhiteSpace(_pathFilter))
+            query = query.Where(l => l.Path != null && l.Path.Contains(_pathFilter));
+        if (!string.IsNullOrWhiteSpace(_search))
+            query = query.Where(l => l.Message != null && l.Message.Contains(_search));
+        if (_formOnly)
+            query = query.Where(l => l.Message != null && l.Message.StartsWith("[FORM]"));
+
+        _logs = await query
+            .OrderByDescending(l => l.TimeStamp)
+            .Take(500)
+            .ToListAsync();
+
+        _loading = false;
+    }
+
+    private async Task ClearOldLogs()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var cutoff = DateTime.UtcNow.AddDays(-30);
+        await db.AppLogs.Where(l => l.TimeStamp < cutoff).ExecuteDeleteAsync();
+        await LoadLogs();
+    }
+
+    private static string LevelBadgeClass(string? level) => level switch
+    {
+        "Fatal"       => "bg-purple-900/50 text-purple-300",
+        "Error"       => "bg-aion-red/20 text-aion-crimson",
+        "Warning"     => "bg-yellow-900/30 text-yellow-400",
+        "Information" => "bg-aion-teal/10 text-aion-teal",
+        _             => "bg-gray-700/40 text-gray-400"
+    };
+
+    private static string LevelRowClass(string? level) => level switch
+    {
+        "Fatal"   => "bg-purple-900/10",
+        "Error"   => "bg-aion-red/5",
+        "Warning" => "bg-yellow-900/5",
+        _         => ""
+    };
+}

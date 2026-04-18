@@ -16,6 +16,8 @@
 @inject NavigationManager Navigation
 @inject IDbContextFactory<AionAccountsDbContext> AionAccountsDbFactory
 @inject IDbContextFactory<AionWorldDbContext> AionWorldDbFactory
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject IAuditLogger AuditLogger
 
 <PageTitle>Control Panel — Aion Overdose 58</PageTitle>
 
@@ -375,10 +377,12 @@ else
     private ChangePasswordModel _pwModel = new();
     private ChangeEmailModel _emailModel = new();
     private ChangePinModel _pinModel = new();
+    private string _clientIp = "Unknown";
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
+        _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
         if (AuthState is null)
         {
             Navigation.NavigateTo("/account/login");
@@ -423,11 +427,13 @@ else
         if (_pwModel.NewPassword != _pwModel.Confirm)
         {
             _errorMsg = "Passwords do not match.";
+            AuditLogger.LogFormEvent("ChangePassword", false, _user!.UserName, _clientIp, "Passwords do not match");
             return;
         }
         if (_user!.PinCode != _pwModel.Pin)
         {
             _errorMsg = "Incorrect PIN. Please try again.";
+            AuditLogger.LogFormEvent("ChangePassword", false, _user!.UserName, _clientIp, "Wrong PIN");
             return;
         }
         _submitting = true;
@@ -435,11 +441,16 @@ else
         var (ok, msg) = await AccountService.ChangePasswordAsync(_user!.Id, _pwModel.Current, _pwModel.NewPassword);
         if (ok)
         {
+            AuditLogger.LogFormEvent("ChangePassword", true, _user!.UserName, _clientIp, "Password changed successfully");
             await SignInManager.SignOutAsync();
             Navigation.NavigateTo("/account/login?reason=password-changed");
             return;
         }
-        else _errorMsg = msg;
+        else
+        {
+            AuditLogger.LogFormEvent("ChangePassword", false, _user!.UserName, _clientIp, msg);
+            _errorMsg = msg;
+        }
         _submitting = false;
     }
 
@@ -448,14 +459,25 @@ else
         if (_user!.PinCode != _emailModel.Pin)
         {
             _errorMsg = "Incorrect PIN. Please try again.";
+            AuditLogger.LogFormEvent("ChangeEmail", false, _user!.UserName, _clientIp, "Wrong PIN");
             return;
         }
         _submitting = true;
         ClearMessages();
         var baseUrl = Navigation.BaseUri.TrimEnd('/');
         var (ok, msg) = await AccountService.ChangeEmailAsync(_user!.Id, _emailModel.NewEmail, baseUrl);
-        if (ok) { _successMsg = msg; _emailModel = new(); }
-        else _errorMsg = msg;
+        if (ok)
+        {
+            AuditLogger.LogFormEvent("ChangeEmail", true, _user!.UserName, _clientIp,
+                $"Email change requested → {_emailModel.NewEmail}");
+            _successMsg = msg;
+            _emailModel = new();
+        }
+        else
+        {
+            AuditLogger.LogFormEvent("ChangeEmail", false, _user!.UserName, _clientIp, msg);
+            _errorMsg = msg;
+        }
         _submitting = false;
     }
 
@@ -464,13 +486,23 @@ else
         if (_pinModel.NewPin != _pinModel.Confirm)
         {
             _errorMsg = "PINs do not match.";
+            AuditLogger.LogFormEvent("ChangePin", false, _user!.UserName, _clientIp, "PINs do not match");
             return;
         }
         _submitting = true;
         ClearMessages();
         var (ok, msg) = await AccountService.ChangePinAsync(_user!.Id, _pinModel.Current, _pinModel.NewPin);
-        if (ok) { _successMsg = msg; _pinModel = new(); }
-        else _errorMsg = msg;
+        if (ok)
+        {
+            AuditLogger.LogFormEvent("ChangePin", true, _user!.UserName, _clientIp, "PIN changed successfully");
+            _successMsg = msg;
+            _pinModel = new();
+        }
+        else
+        {
+            AuditLogger.LogFormEvent("ChangePin", false, _user!.UserName, _clientIp, msg);
+            _errorMsg = msg;
+        }
         _submitting = false;
     }
 

@@ -3,6 +3,8 @@
 @using AionOverdose58.Web.Services
 @inject IAccountService AccountService
 @inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject IAuditLogger AuditLogger
 
 <PageTitle>PIN Recovery — Aion Overdose 58</PageTitle>
 
@@ -159,10 +161,12 @@
     private string? _errorMessage;
     private string? _successMessage;
     private string _captchaCode = string.Empty;
+    private string _clientIp = "Unknown";
 
     protected override void OnInitialized()
     {
         GenerateCaptcha();
+        _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
     }
 
     private void GenerateCaptcha()
@@ -187,6 +191,7 @@
             if (!string.Equals(_model.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
             {
                 _errorMessage = "Invalid captcha code. Please try again.";
+                AuditLogger.LogFormEvent("PinRecovery", false, _model.Email, _clientIp, "Invalid captcha");
                 GenerateCaptcha();
                 _model.CaptchaInput = string.Empty;
                 return;
@@ -197,11 +202,13 @@
 
             if (success)
             {
+                AuditLogger.LogFormEvent("PinRecovery", true, _model.Email, _clientIp, "PIN verified, reset email dispatched");
                 _emailSent = true;
                 _successMessage = message;
             }
             else
             {
+                AuditLogger.LogFormEvent("PinRecovery", false, _model.Email, _clientIp, message);
                 _errorMessage = message;
             }
 
