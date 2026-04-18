@@ -4,6 +4,7 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager Navigation
 @inject AionOverdose58.Web.Services.IAuditLogger AuditLogger
+@inject AionOverdose58.Web.Services.IRecaptchaService RecaptchaService
 
 <PageTitle>Login — Aion Overdose 58</PageTitle>
 
@@ -21,10 +22,9 @@
                 <DataAnnotationsValidator />
 
                 <div class="mb-5">
-                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Username or Email</label>
+                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Username</label>
                     <InputText @bind-Value="Input.UsernameOrEmail"
-                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
-                               placeholder="username or email" />
+                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
                     <ValidationMessage For="@(() => Input.UsernameOrEmail)" class="text-red-400 text-xs mt-1" />
                 </div>
 
@@ -63,10 +63,20 @@
                     </div>
                 }
 
-                <button type="submit"
+                <!-- Hidden reCAPTCHA v3 token — populated by JS before submit -->
+                <input type="hidden" id="recaptcha-login-token" name="Input.RecaptchaToken" />
+
+                <button type="button"
+                        onclick="submitLoginWithRecaptcha(this)"
                         class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded">
                     Login
                 </button>
+
+                <p class="text-center text-gray-600 text-xs mt-3">
+                    Protected by reCAPTCHA —
+                    <a href="https://policies.google.com/privacy" class="hover:text-gray-400" target="_blank" rel="noopener">Privacy</a> &amp;
+                    <a href="https://policies.google.com/terms" class="hover:text-gray-400" target="_blank" rel="noopener">Terms</a>
+                </p>
             </EditForm>
 
             <div class="mt-6 text-center">
@@ -110,6 +120,17 @@
         _errorMessage = null;
         _successMessage = null;
 
+        var ip = HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+
+        // Verify reCAPTCHA v3 token
+        var (captchaPassed, _, captchaError) = await RecaptchaService.VerifyAsync(Input!.RecaptchaToken ?? string.Empty, "login");
+        if (!captchaPassed)
+        {
+            _errorMessage = captchaError ?? "Security check failed. Please try again.";
+            AuditLogger.LogFormEvent("Login", false, Input!.UsernameOrEmail, ip, "reCAPTCHA failed");
+            return;
+        }
+
         // Try sign-in by username directly
         var result = await SignInManager.PasswordSignInAsync(
             Input!.UsernameOrEmail,
@@ -130,8 +151,6 @@
                     lockoutOnFailure: true);
             }
         }
-
-        var ip = HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
 
         if (result.Succeeded)
         {
@@ -167,5 +186,7 @@
         public string Password { get; set; } = string.Empty;
 
         public bool RememberMe { get; set; } = false;
+
+        public string? RecaptchaToken { get; set; }
     }
 }

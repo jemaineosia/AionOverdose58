@@ -5,6 +5,8 @@
 @inject NavigationManager Navigation
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 @inject IAuditLogger AuditLogger
+@inject IJSRuntime JSRuntime
+@inject IRecaptchaService RecaptchaService
 
 <PageTitle>PIN Recovery — Aion Overdose 58</PageTitle>
 
@@ -42,29 +44,6 @@
                         <p class="text-gray-500 text-xs mt-2">The PIN you set during registration</p>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Verify You're Human</label>
-                        <div class="bg-gray-800/80 border border-gray-600 rounded p-4 mb-2">
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="font-mono text-2xl text-white tracking-wider select-none" style="letter-spacing: 0.5em;">
-                                    @_captchaCode
-                                </div>
-                                <button type="button"
-                                        @onclick="GenerateCaptcha"
-                                        class="text-aion-gold hover:text-white transition-colors"
-                                        title="Regenerate Captcha">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <InputText @bind-Value="_model.CaptchaInput"
-                                       class="w-full bg-gray-900/80 border border-gray-600 text-white px-4 py-2 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
-                                       placeholder="Enter the code above" />
-                        </div>
-                        <ValidationMessage For="@(() => _model.CaptchaInput)" class="text-red-400 text-xs mt-1" />
-                    </div>
-
                     @if (!string.IsNullOrEmpty(_errorMessage))
                     {
                         <div class="bg-aion-red/20 border border-aion-red/50 text-red-300 text-sm px-4 py-3 rounded mb-4">
@@ -75,7 +54,20 @@
                     <button type="submit"
                             disabled="@_isProcessing"
                             class="w-full bg-aion-gold hover:bg-aion-gold/80 text-aion-dark font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed mb-4">
-                        @(_isProcessing ? "Verifying..." : "Verify PIN")
+                        @if (_isProcessing)
+                        {
+                            <span class="inline-flex items-center gap-2">
+                                <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                </svg>
+                                Verifying...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>Verify PIN</span>
+                        }
                     </button>
 
                     <div class="text-center space-y-2">
@@ -87,6 +79,12 @@
                             Back to Login
                         </a>
                     </div>
+
+                    <p class="text-center text-gray-600 text-xs mt-4">
+                        Protected by reCAPTCHA —
+                        <a href="https://policies.google.com/privacy" class="hover:text-gray-400" target="_blank" rel="noopener">Privacy</a> &amp;
+                        <a href="https://policies.google.com/terms" class="hover:text-gray-400" target="_blank" rel="noopener">Terms</a>
+                    </p>
                 </EditForm>
             }
             else
@@ -160,22 +158,11 @@
     private bool _emailSent = false;
     private string? _errorMessage;
     private string? _successMessage;
-    private string _captchaCode = string.Empty;
     private string _clientIp = "Unknown";
 
     protected override void OnInitialized()
     {
-        GenerateCaptcha();
         _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
-    }
-
-    private void GenerateCaptcha()
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var random = new Random();
-        _captchaCode = new string(Enumerable.Range(0, 6)
-            .Select(_ => chars[random.Next(chars.Length)])
-            .ToArray());
     }
 
     private async Task HandlePinRecovery()
@@ -187,13 +174,13 @@
 
         try
         {
-            // Validate Captcha
-            if (!string.Equals(_model.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
+            // Verify reCAPTCHA v3 token
+            var recaptchaToken = await JSRuntime.InvokeAsync<string>("executeRecaptcha", "pin_recovery");
+            var (captchaPassed, _, captchaError) = await RecaptchaService.VerifyAsync(recaptchaToken, "pin_recovery");
+            if (!captchaPassed)
             {
-                _errorMessage = "Invalid captcha code. Please try again.";
-                AuditLogger.LogFormEvent("PinRecovery", false, _model.Email, _clientIp, "Invalid captcha");
-                GenerateCaptcha();
-                _model.CaptchaInput = string.Empty;
+                _errorMessage = captchaError ?? "Security check failed. Please try again.";
+                AuditLogger.LogFormEvent("PinRecovery", false, _model.Email, _clientIp, "reCAPTCHA failed");
                 return;
             }
 
@@ -212,14 +199,11 @@
                 _errorMessage = message;
             }
 
-            GenerateCaptcha();
-            _model.CaptchaInput = string.Empty;
         }
         catch (Exception ex)
         {
             _errorMessage = "An unexpected error occurred. Please try again.";
             Console.WriteLine($"PIN recovery error: {ex.Message}");
-            GenerateCaptcha();
         }
         finally
         {
@@ -233,7 +217,6 @@
         _model = new();
         _errorMessage = null;
         _successMessage = null;
-        GenerateCaptcha();
     }
 
     private class PinRecoveryModel
@@ -247,8 +230,5 @@
         [System.ComponentModel.DataAnnotations.StringLength(6, MinimumLength = 4, 
             ErrorMessage = "PIN must be between 4 and 6 digits")]
         public string PinCode { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please enter the captcha code")]
-        public string CaptchaInput { get; set; } = string.Empty;
     }
 }

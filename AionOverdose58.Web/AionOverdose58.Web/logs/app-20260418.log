@@ -1,0 +1,13 @@
+2026-04-18 19:44:33 [WRN] [FORM] Login FAILED — Invalid credentials | test003 @ ::1
+2026-04-18 20:06:00 [WRN] reCAPTCHA v3 failed: browser-error (action=login)
+2026-04-18 20:06:00 [WRN] [FORM] Login FAILED — reCAPTCHA failed | test003 @ ::1
+2026-04-18 20:06:06 [WRN] reCAPTCHA v3 failed: browser-error (action=login)
+2026-04-18 20:06:06 [WRN] [FORM] Login FAILED — reCAPTCHA failed | test003 @ ::1
+2026-04-18 20:06:08 [WRN] reCAPTCHA v3 failed: browser-error (action=login)
+2026-04-18 20:06:08 [WRN] [FORM] Login FAILED — reCAPTCHA failed | test003 @ ::1
+2026-04-18 20:06:14 [WRN] reCAPTCHA v3 failed: browser-error (action=login)
+2026-04-18 20:06:14 [WRN] [FORM] Login FAILED — reCAPTCHA failed | test003 @ ::1
+2026-04-18 21:08:33 [WRN] [FORM] Login FAILED — Invalid credentials | test003 @ ::1
+2026-04-18 21:42:23 [WRN] [FORM] Login FAILED — Invalid credentials | test003 @ ::1
+2026-04-18 21:42:35 [WRN] [FORM] Login FAILED — Invalid credentials | test003 @ ::1
+2026-04-18 21:46:56 [WRN] [FORM] Register FAILED — Email already exists. | betlog001 @ ::1

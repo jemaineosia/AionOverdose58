@@ -5,6 +5,8 @@
 @inject NavigationManager Navigation
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 @inject IAuditLogger AuditLogger
+@inject IRecaptchaService RecaptchaService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Register — Aion Overdose 58</PageTitle>
 
@@ -24,7 +26,7 @@
                     <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Username</label>
                     <InputText @bind-Value="_registerModel.Username"
                                class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
-                               placeholder="YourDaevaName" />
+                               placeholder="YouAccountName" />
                     <ValidationMessage For="@(() => _registerModel.Username)" class="text-red-400 text-xs mt-1" />
                 </div>
 
@@ -66,29 +68,6 @@
                     <p class="text-gray-500 text-xs mt-1">Used for account security and recovery</p>
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Verify You're Human</label>
-                    <div class="bg-gray-800/80 border border-gray-600 rounded p-4 mb-2">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="font-mono text-2xl text-white tracking-wider select-none" style="letter-spacing: 0.5em;">
-                                @_captchaCode
-                            </div>
-                            <button type="button"
-                                    @onclick="GenerateCaptcha"
-                                    class="text-aion-gold hover:text-white transition-colors"
-                                    title="Regenerate Captcha">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <InputText @bind-Value="_registerModel.CaptchaInput"
-                                   class="w-full bg-gray-900/80 border border-gray-600 text-white px-4 py-2 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
-                                   placeholder="Enter the code above" />
-                    </div>
-                    <ValidationMessage For="@(() => _registerModel.CaptchaInput)" class="text-red-400 text-xs mt-1" />
-                </div>
-
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="bg-aion-red/20 border border-aion-red/50 text-red-300 text-sm px-4 py-3 rounded mb-4">
@@ -99,8 +78,27 @@
                 <button type="submit"
                         disabled="@_isProcessing"
                         class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                    @(_isProcessing ? "Processing..." : "Register")
+                    @if (_isProcessing)
+                    {
+                        <span class="inline-flex items-center gap-2">
+                            <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                            </svg>
+                            Processing...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>Register</span>
+                    }
                 </button>
+
+                <p class="text-center text-gray-600 text-xs mt-3">
+                    Protected by reCAPTCHA —
+                    <a href="https://policies.google.com/privacy" class="hover:text-gray-400" target="_blank" rel="noopener">Privacy</a> &amp;
+                    <a href="https://policies.google.com/terms" class="hover:text-gray-400" target="_blank" rel="noopener">Terms</a>
+                </p>
             </EditForm>
 
             <div class="mt-6 text-center">
@@ -116,23 +114,12 @@
 @code {
     private RegisterModel _registerModel = new();
     private string? _errorMessage;
-    private string _captchaCode = string.Empty;
     private bool _isProcessing = false;
     private string _clientIp = "Unknown";
 
     protected override void OnInitialized()
     {
-        GenerateCaptcha();
         _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
-    }
-
-    private void GenerateCaptcha()
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude confusing characters
-        var random = new Random();
-        _captchaCode = new string(Enumerable.Range(0, 6)
-            .Select(_ => chars[random.Next(chars.Length)])
-            .ToArray());
     }
 
     private async Task HandleRegister()
@@ -144,13 +131,23 @@
 
         try
         {
-            // Validate Captcha
-            if (!string.Equals(_registerModel.CaptchaInput, _captchaCode, StringComparison.OrdinalIgnoreCase))
+            // Execute reCAPTCHA v3 and verify server-side
+            string recaptchaToken;
+            try
             {
-                _errorMessage = "Invalid captcha code. Please try again.";
-                AuditLogger.LogFormEvent("Register", false, _registerModel.Username, _clientIp, "Invalid captcha");
-                GenerateCaptcha();
-                _registerModel.CaptchaInput = string.Empty;
+                recaptchaToken = await JSRuntime.InvokeAsync<string>("executeRecaptcha", "register");
+            }
+            catch
+            {
+                _errorMessage = "Security check failed to load. Please refresh the page and try again.";
+                return;
+            }
+
+            var (captchaPassed, _, captchaError) = await RecaptchaService.VerifyAsync(recaptchaToken, "register");
+            if (!captchaPassed)
+            {
+                _errorMessage = captchaError ?? "Security check failed. Please try again.";
+                AuditLogger.LogFormEvent("Register", false, _registerModel.Username, _clientIp, "reCAPTCHA failed");
                 return;
             }
 
@@ -176,9 +173,6 @@
                 AuditLogger.LogFormEvent("Register", false, _registerModel.Username, _clientIp, message);
                 _errorMessage = message;
             }
-
-            GenerateCaptcha();
-            _registerModel.CaptchaInput = string.Empty;
         }
         finally
         {
@@ -216,8 +210,5 @@
         [System.ComponentModel.DataAnnotations.StringLength(6, MinimumLength = 4, 
             ErrorMessage = "PIN must be between 4 and 6 digits")]
         public string PinCode { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please enter the captcha code")]
-        public string CaptchaInput { get; set; } = string.Empty;
     }
 }

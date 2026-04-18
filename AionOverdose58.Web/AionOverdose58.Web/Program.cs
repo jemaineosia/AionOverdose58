@@ -165,6 +165,11 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// reCAPTCHA v3
+builder.Services.Configure<RecaptchaSettings>(builder.Configuration.GetSection("RecaptchaSettings"));
+builder.Services.AddHttpClient("recaptcha");
+builder.Services.AddScoped<IRecaptchaService, RecaptchaService>();
+
 // Add HttpContextAccessor for IP address tracking
 builder.Services.AddHttpContextAccessor();
 
