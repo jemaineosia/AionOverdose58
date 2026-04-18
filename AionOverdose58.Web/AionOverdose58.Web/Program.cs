@@ -10,8 +10,6 @@ using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
 using System.Data;
-using System.Collections.ObjectModel;
-using System.Data;
 
 // ── Bootstrap logger (captures startup errors before full config loads) ──
 Log.Logger = new LoggerConfiguration()

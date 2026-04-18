@@ -1,11 +1,19 @@
 @page "/server-status"
+@rendermode InteractiveServer
+@using AionOverdose58.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Net.NetworkInformation
+@using Microsoft.Data.SqlClient
+@inject IDbContextFactory<AionWorldDbContext> WorldDbFactory
+@inject IConfiguration Configuration
+@implements IDisposable
 
-<PageTitle>Server Status — Aion Overdose 58</PageTitle>
+<PageTitle>Server Status — Aion Overdose 4.9</PageTitle>
 
 <div class="min-h-screen pt-56 pb-16 px-4">
     <div class="max-w-4xl mx-auto">
 
-        <!-- Page header -->
+        <!-- Page Header -->
         <div class="text-center mb-12">
             <h1 class="font-cinzel text-4xl md:text-5xl text-white tracking-widest uppercase mb-3">
                 Server Status
@@ -17,14 +25,221 @@
             </div>
         </div>
 
-        <!-- Unavailable notice -->
-        <div class="text-center py-20 border border-gray-700/40 rounded-lg bg-gray-900/40">
-            <div class="w-16 h-16 rounded-full bg-aion-teal/10 border border-aion-teal/30 flex items-center justify-center mx-auto mb-5">
-                <span class="text-2xl">⚡</span>
+        <!-- Server Status Card -->
+        <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="font-cinzel text-xl text-white tracking-widest uppercase">Aion Overdose 4.9</h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-widest mt-1 font-raleway">Live Server Status</p>
+                </div>
+                <div class="flex items-center gap-2 bg-gray-800/80 border @(_isOnline ? "border-green-500/40" : "border-red-500/40") rounded px-4 py-2">
+                    <div class="w-2 h-2 rounded-full @(_isOnline ? "bg-green-400 animate-pulse" : "bg-red-500")"></div>
+                    <span class="font-cinzel text-sm tracking-widest @(_isOnline ? "text-green-400" : "text-red-400")">
+                        @(_isOnline ? "ONLINE" : (_loading ? "CHECKING..." : "OFFLINE"))
+                    </span>
+                </div>
             </div>
-            <p class="font-cinzel text-xl text-gray-300 uppercase tracking-widest mb-2">Currently Unavailable</p>
-            <p class="text-sm text-gray-500 font-raleway max-w-md mx-auto">Live server status monitoring is not yet available. Check back soon for real-time server information.</p>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-800/60 rounded p-4">
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-2 font-raleway">Reachability</p>
+                    <p class="font-cinzel text-sm font-bold tracking-wider @(_loading ? "text-gray-500" : _isOnline ? "text-aion-gold" : "text-red-400")">
+                        @(_loading ? "—" : _isOnline ? "REACHABLE" : "UNREACHABLE")
+                    </p>
+                </div>
+                <div class="bg-gray-800/60 rounded p-4">
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-2 font-raleway">Latency</p>
+                    <p class="font-cinzel text-sm font-bold tracking-wider @(_latency.HasValue ? "text-aion-gold" : "text-gray-500")">
+                        @(_latency.HasValue ? $"{_latency} MS" : "—")
+                    </p>
+                </div>
+                <div class="bg-gray-800/60 rounded p-4">
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-2 font-raleway">Target</p>
+                    <p class="font-cinzel text-xs text-aion-gold font-bold tracking-wider">@DisplayTarget</p>
+                </div>
+                <div class="bg-gray-800/60 rounded p-4">
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-2 font-raleway">Last Checked</p>
+                    <p class="font-cinzel text-sm text-white font-bold tracking-wider">@_lastChecked.ToString("hh:mm:ss tt")</p>
+                </div>
+            </div>
+
+            <!-- Auto-refresh countdown bar -->
+            <div class="flex items-center gap-3">
+                <p class="text-gray-600 text-xs italic font-raleway whitespace-nowrap">Auto-refreshing in @_countdown s</p>
+                <div class="flex-1 bg-gray-700/50 rounded-full h-1 overflow-hidden">
+                    <div class="bg-aion-gold/70 h-1 rounded-full transition-all duration-1000"
+                         style="width: @(_countdown * 100 / RefreshInterval)%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Status Card -->
+        <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="font-cinzel text-xl text-white tracking-widest uppercase">Aion Overdose 4.9</h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-widest mt-1 font-raleway">Players Status</p>
+                </div>
+                <div class="bg-gray-800/80 border border-gray-700/50 rounded px-5 py-2 flex items-center gap-2">
+                    <span class="font-cinzel text-2xl text-white font-bold">@_totalOnline</span>
+                    <div class="leading-tight">
+                        <p class="text-green-400 text-xs font-bold uppercase tracking-widest font-cinzel">Online</p>
+                        <p class="text-gray-400 text-xs uppercase tracking-widest font-raleway">Players</p>
+                    </div>
+                </div>
+            </div>
+
+            @if (_totalOnline > 0)
+            {
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Asmodians -->
+                    <div class="bg-gray-800/60 rounded p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-gray-400 text-xs uppercase tracking-widest font-raleway">Asmodians</p>
+                            <p class="text-purple-400 font-bold text-sm font-cinzel">@_asmodianPct%</p>
+                        </div>
+                        <div class="w-full bg-gray-700/50 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-purple-500 h-1.5 rounded-full transition-all duration-700"
+                                 style="width: @_asmodianPct%"></div>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-2 font-raleway">@_asmodianCount players</p>
+                    </div>
+                    <!-- Elyos -->
+                    <div class="bg-gray-800/60 rounded p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-gray-400 text-xs uppercase tracking-widest font-raleway">Elyos</p>
+                            <p class="text-blue-400 font-bold text-sm font-cinzel">@_elyosPct%</p>
+                        </div>
+                        <div class="w-full bg-gray-700/50 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-700"
+                                 style="width: @_elyosPct%"></div>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-2 font-raleway">@_elyosCount players</p>
+                    </div>
+                </div>
+            }
+            else if (_loading)
+            {
+                <div class="text-center py-6">
+                    <p class="text-gray-500 text-sm font-raleway">Loading player data...</p>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-6">
+                    <p class="text-gray-500 text-sm font-raleway">No players currently online</p>
+                </div>
+            }
         </div>
 
     </div>
 </div>
+
+@code {
+    private const int RefreshInterval = 30;
+
+    private bool _isOnline;
+    private bool _loading = true;
+    private long? _latency;
+    private DateTime _lastChecked = DateTime.Now;
+    private const string DisplayTarget = "AionOverdose.com";
+    private string _serverIp = string.Empty;
+    private int _countdown = RefreshInterval;
+
+    private int _totalOnline;
+    private int _asmodianCount;
+    private int _elyosCount;
+    private int _asmodianPct;
+    private int _elyosPct;
+
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Parse server IP from connection string for ping + target display
+        var cs = Configuration.GetConnectionString("AionWorldConnection") ?? string.Empty;
+        try
+        {
+            var builder = new SqlConnectionStringBuilder(cs);
+            _serverIp = builder.DataSource;
+        }
+        catch
+        {
+            _serverIp = "158.69.54.217";
+        }
+
+        await RefreshAllAsync();
+
+        _timer = new Timer(async _ =>
+        {
+            _countdown--;
+            if (_countdown <= 0)
+            {
+                _countdown = RefreshInterval;
+                await RefreshAllAsync();
+            }
+            await InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+    }
+
+    private async Task RefreshAllAsync()
+    {
+        _loading = true;
+        _lastChecked = DateTime.Now;
+        await Task.WhenAll(CheckServerAsync(), LoadPlayersAsync());
+        _loading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckServerAsync()
+    {
+        try
+        {
+            using var ping = new Ping();
+            var reply = await ping.SendPingAsync(_serverIp, 3000);
+            _isOnline = reply.Status == IPStatus.Success;
+            _latency = _isOnline ? reply.RoundtripTime : null;
+        }
+        catch
+        {
+            _isOnline = false;
+            _latency = null;
+        }
+    }
+
+    private async Task LoadPlayersAsync()
+    {
+        try
+        {
+            await using var ctx = await WorldDbFactory.CreateDbContextAsync();
+            // Online players: last_login_time = last_logout_time
+            var raceCounts = await ctx.Characters
+                .Where(c => c.LastLoginTime != null && c.LastLoginTime > c.LastLogoutTime)
+                .GroupBy(c => c.Race)
+                .Select(g => new { Race = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // Race 1 = Asmodian, Race 0 = Elyos
+            _asmodianCount = raceCounts.FirstOrDefault(r => r.Race == 1)?.Count ?? 0;
+            _elyosCount    = raceCounts.FirstOrDefault(r => r.Race == 0)?.Count ?? 0;
+            _totalOnline   = _asmodianCount + _elyosCount;
+
+            if (_totalOnline > 0)
+            {
+                _asmodianPct = (int)Math.Round(_asmodianCount * 100.0 / _totalOnline);
+                _elyosPct    = 100 - _asmodianPct;
+            }
+            else
+            {
+                _asmodianPct = 0;
+                _elyosPct    = 0;
+            }
+        }
+        catch
+        {
+            // DB unavailable — keep previous values
+        }
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}
