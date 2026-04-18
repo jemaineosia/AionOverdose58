@@ -5,6 +5,7 @@ using AionOverdose58.Shared.Utility;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Data;
 using System.Text;
 using System.Web;
@@ -30,19 +31,22 @@ public class AccountService : IAccountService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailService _emailService;
     private readonly ILogger<AccountService> _logger;
+    private readonly AccountSettings _accountSettings;
 
     public AccountService(
         IDbContextFactory<AppDbContext> webDbFactory,
         IDbContextFactory<AionAccountsDbContext> aionDbFactory,
         UserManager<ApplicationUser> userManager,
         IEmailService emailService,
-        ILogger<AccountService> logger)
+        ILogger<AccountService> logger,
+        IOptions<AccountSettings> accountSettings)
     {
         _webDbFactory = webDbFactory;
         _aionDbFactory = aionDbFactory;
         _userManager = userManager;
         _emailService = emailService;
         _logger = logger;
+        _accountSettings = accountSettings.Value;
     }
 
     public async Task<bool> UsernameExistsAsync(string username)
@@ -136,7 +140,7 @@ public class AccountService : IAccountService
                 Email = email,
                 PinCode = pinCode,
                 RegisteredDate = DateTime.UtcNow,
-                EmailConfirmed = false,
+                EmailConfirmed = !_accountSettings.RequireEmailConfirmation,
                 IsActive = true
             };
 
@@ -152,21 +156,23 @@ public class AccountService : IAccountService
             // Assign default role
             await _userManager.AddToRoleAsync(user, "Player");
 
-            // Generate email confirmation token
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var encodedToken = HttpUtility.UrlEncode(token);
-            var confirmationLink = $"{baseUrl}/account/confirm-email?userId={user.Id}&code={encodedToken}";
+            // Send confirmation email if required
+            if (_accountSettings.RequireEmailConfirmation)
+            {
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var encodedToken = HttpUtility.UrlEncode(token);
+                var confirmationLink = $"{baseUrl}/account/confirm-email?userId={user.Id}&code={encodedToken}";
 
-            // Send confirmation email
-            try
-            {
-                await _emailService.SendConfirmationEmailAsync(email, username, confirmationLink);
-                _logger.LogInformation("Confirmation email sent to {Email}", email);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send confirmation email to {Email}", email);
-                // Don't fail registration if email fails
+                try
+                {
+                    await _emailService.SendConfirmationEmailAsync(email, username, confirmationLink);
+                    _logger.LogInformation("Confirmation email sent to {Email}", email);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send confirmation email to {Email}", email);
+                    // Don't fail registration if email fails
+                }
             }
 
             // Create account in Aion database using stored procedure
@@ -202,6 +208,20 @@ public class AccountService : IAccountService
                 // Update Identity user with Aion account UID
                 user.AionAccountUid = aionAccountUid;
                 await _userManager.UpdateAsync(user);
+
+                // Always sync the password to account_data in case the stored procedure
+                // returned an existing account UID without updating its password
+                await aionDb.Database.ExecuteSqlRawAsync(
+                    @"UPDATE account_data SET 
+                        password = @password,
+                        passwd   = @passwd,
+                        web_password = @web_password
+                      WHERE id = @uid",
+                    new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(password)),
+                    new SqlParameter("@passwd", AionEncrypt.EncryptWebPassword(password)),
+                    new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(password).ToUpper()),
+                    new SqlParameter("@uid", aionAccountUid)
+                );
             }
             else
             {
@@ -209,7 +229,12 @@ public class AccountService : IAccountService
             }
 
             _logger.LogInformation("Account created successfully for user: {Username} with AionUID: {AionUid}", username, aionAccountUid);
-            return (true, "Registration successful! Please check your email to confirm your account.");
+
+            var message = _accountSettings.RequireEmailConfirmation
+                ? "Registration successful! Please check your email to confirm your account."
+                : "Registration successful! You can now log in.";
+
+            return (true, message);
         }
         catch (Exception ex)
         {

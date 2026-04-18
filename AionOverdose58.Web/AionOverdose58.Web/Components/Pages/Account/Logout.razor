@@ -1,0 +1,18 @@
+@page "/account/logout"
+@using Microsoft.AspNetCore.Identity
+@using AionOverdose58.Shared.Models
+@inject SignInManager<ApplicationUser> SignInManager
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext is not null)
+        {
+            await SignInManager.SignOutAsync();
+            HttpContext.Response.Redirect("/");
+        }
+    }
+}

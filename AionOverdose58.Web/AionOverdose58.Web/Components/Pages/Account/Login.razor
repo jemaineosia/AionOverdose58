@@ -1,5 +1,4 @@
 @page "/account/login"
-@rendermode InteractiveAuto
 @using AionOverdose58.Shared.Models
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
@@ -17,29 +16,29 @@
                 <p class="text-gray-400 text-sm mt-2 font-raleway">Enter the realm, Daeva</p>
             </div>
 
-            <EditForm Model="_loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+            <EditForm Model="Input!" OnValidSubmit="HandleLogin" FormName="LoginForm" method="post">
                 <DataAnnotationsValidator />
 
                 <div class="mb-5">
                     <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Username or Email</label>
-                    <InputText @bind-Value="_loginModel.UsernameOrEmail"
+                    <InputText @bind-Value="Input.UsernameOrEmail"
                                class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
                                placeholder="username or email" />
-                    <ValidationMessage For="@(() => _loginModel.UsernameOrEmail)" class="text-red-400 text-xs mt-1" />
+                    <ValidationMessage For="@(() => Input.UsernameOrEmail)" class="text-red-400 text-xs mt-1" />
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Password</label>
-                    <InputText @bind-Value="_loginModel.Password"
+                    <InputText @bind-Value="Input.Password"
                                type="password"
                                class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors placeholder-gray-600"
                                placeholder="••••••••" />
-                    <ValidationMessage For="@(() => _loginModel.Password)" class="text-red-400 text-xs mt-1" />
+                    <ValidationMessage For="@(() => Input.Password)" class="text-red-400 text-xs mt-1" />
                 </div>
 
                 <div class="mb-6 flex items-center justify-between">
                     <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
-                        <InputCheckbox @bind-Value="_loginModel.RememberMe" 
+                        <InputCheckbox @bind-Value="Input.RememberMe" 
                                      class="w-4 h-4 bg-gray-800 border-gray-600 rounded focus:ring-aion-gold" />
                         <span>Remember me</span>
                     </label>
@@ -64,9 +63,8 @@
                 }
 
                 <button type="submit"
-                        disabled="@_isProcessing"
-                        class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                    @(_isProcessing ? "Logging in..." : "Login")
+                        class="w-full bg-aion-crimson hover:bg-aion-red text-white font-cinzel font-bold py-3 uppercase tracking-widest transition-colors duration-300 rounded">
+                    Login
                 </button>
             </EditForm>
 
@@ -81,93 +79,75 @@
 </div>
 
 @code {
-    private LoginModel _loginModel = new();
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [SupplyParameterFromForm]
+    private LoginModel? Input { get; set; }
+
     private string? _errorMessage;
     private string? _successMessage;
-    private bool _isProcessing = false;
 
-    private async Task HandleLogin()
+    protected override void OnInitialized()
     {
-        if (_isProcessing) return;
+        Input ??= new();
 
-        _errorMessage = null;
-        _successMessage = null;
-        _isProcessing = true;
-
-        try
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (query["registered"] == "1" && !string.IsNullOrEmpty(query["msg"]))
         {
-            // Try to find user by username or email
-            var result = await SignInManager.PasswordSignInAsync(
-                _loginModel.UsernameOrEmail,
-                _loginModel.Password,
-                _loginModel.RememberMe,
-                lockoutOnFailure: true);
-
-            if (result.Succeeded)
-            {
-                _successMessage = "Login successful! Redirecting...";
-                await Task.Delay(1000);
-                Navigation.NavigateTo("/", forceLoad: true);
-                return;
-            }
-
-            if (result.IsLockedOut)
-            {
-                _errorMessage = "Account locked due to multiple failed login attempts. Please try again later.";
-                return;
-            }
-
-            if (result.RequiresTwoFactor)
-            {
-                _errorMessage = "Two-factor authentication required.";
-                return;
-            }
-
-            if (result.IsNotAllowed)
-            {
-                _errorMessage = "Please confirm your email address before logging in. Check your inbox for the confirmation link.";
-                return;
-            }
-
-            // If username login failed, try email
-            if (!result.Succeeded && !_loginModel.UsernameOrEmail.Contains("@"))
-            {
-                // Try finding user by username and get their email
-                var userManager = SignInManager.UserManager;
-                var user = await userManager.FindByNameAsync(_loginModel.UsernameOrEmail);
-
-                if (user != null && user.Email != null)
-                {
-                    result = await SignInManager.PasswordSignInAsync(
-                        user.Email,
-                        _loginModel.Password,
-                        _loginModel.RememberMe,
-                        lockoutOnFailure: true);
-
-                    if (result.Succeeded)
-                    {
-                        _successMessage = "Login successful! Redirecting...";
-                        await Task.Delay(1000);
-                        Navigation.NavigateTo("/", forceLoad: true);
-                        return;
-                    }
-                }
-            }
-
-            _errorMessage = "Invalid username/email or password.";
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = "An error occurred during login. Please try again.";
-            Console.WriteLine($"Login error: {ex.Message}");
-        }
-        finally
-        {
-            _isProcessing = false;
+            _successMessage = query["msg"];
         }
     }
 
-    private class LoginModel
+    private async Task HandleLogin()
+    {
+        _errorMessage = null;
+        _successMessage = null;
+
+        // Try sign-in by username directly
+        var result = await SignInManager.PasswordSignInAsync(
+            Input!.UsernameOrEmail,
+            Input.Password,
+            Input.RememberMe,
+            lockoutOnFailure: true);
+
+        // If that failed and it looks like a username (not email), look up the email and retry
+        if (!result.Succeeded && !Input.UsernameOrEmail.Contains('@'))
+        {
+            var user = await SignInManager.UserManager.FindByNameAsync(Input.UsernameOrEmail);
+            if (user?.Email != null)
+            {
+                result = await SignInManager.PasswordSignInAsync(
+                    user.Email,
+                    Input.Password,
+                    Input.RememberMe,
+                    lockoutOnFailure: true);
+            }
+        }
+
+        if (result.Succeeded)
+        {
+            HttpContext?.Response.Redirect("/");
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            _errorMessage = "Account locked due to multiple failed login attempts. Please try again later.";
+            return;
+        }
+
+        if (result.IsNotAllowed)
+        {
+            _errorMessage = "Please confirm your email address before logging in. Check your inbox for the confirmation link.";
+            return;
+        }
+
+        _errorMessage = "Invalid username/email or password.";
+    }
+
+    private sealed class LoginModel
     {
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Username or email is required")]
         public string UsernameOrEmail { get; set; } = string.Empty;

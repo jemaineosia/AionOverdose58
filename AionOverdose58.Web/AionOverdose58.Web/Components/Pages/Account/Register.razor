@@ -1,5 +1,5 @@
 @page "/account/register"
-@rendermode InteractiveAuto
+@rendermode InteractiveServer
 @using AionOverdose58.Web.Services
 @inject IAccountService AccountService
 @inject NavigationManager Navigation
@@ -93,12 +93,6 @@
                         @_errorMessage
                     </div>
                 }
-                @if (!string.IsNullOrEmpty(_successMessage))
-                {
-                    <div class="bg-green-900/20 border border-green-500/50 text-green-300 text-sm px-4 py-3 rounded mb-4">
-                        @_successMessage
-                    </div>
-                }
 
                 <button type="submit"
                         disabled="@_isProcessing"
@@ -120,7 +114,6 @@
 @code {
     private RegisterModel _registerModel = new();
     private string? _errorMessage;
-    private string? _successMessage;
     private string _captchaCode = string.Empty;
     private bool _isProcessing = false;
 
@@ -143,7 +136,6 @@
         if (_isProcessing) return;
 
         _errorMessage = null;
-        _successMessage = null;
         _isProcessing = true;
 
         try
@@ -169,8 +161,8 @@
 
             if (success)
             {
-                _successMessage = message;
-                _registerModel = new(); // Clear form
+                Navigation.NavigateTo($"/account/login?registered=1&msg={Uri.EscapeDataString(message)}");
+                return;
             }
             else
             {

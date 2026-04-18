@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
 
 <!-- ══════════════════════════════════════════
      MOBILE NAV
@@ -41,12 +42,24 @@
 
             <div class="border-t border-gray-300 my-1"></div>
 
-            <NavLink href="/account/login" class="mobile-nav-link" @onclick="CloseMobileMenu">Sign In</NavLink>
-            <div class="px-4 py-3">
-                <NavLink href="/account/register" class="mobile-register-btn block text-center" @onclick="CloseMobileMenu">
-                    Register
-                </NavLink>
-            </div>
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink href="/account/control-panel" class="mobile-nav-link" @onclick="CloseMobileMenu">@_userName</NavLink>
+                    <div class="px-4 py-3">
+                        <a href="/account/logout" class="mobile-register-btn block text-center">
+                            Logout
+                        </a>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="/account/login" class="mobile-nav-link" @onclick="CloseMobileMenu">Sign In</NavLink>
+                    <div class="px-4 py-3">
+                        <NavLink href="/account/register" class="mobile-register-btn block text-center" @onclick="CloseMobileMenu">
+                            Register
+                        </NavLink>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
     }
 </nav>
@@ -107,9 +120,16 @@
             <!-- Separator -->
             <span class="nav-separator">|</span>
 
-            <NavLink href="/account/login" class="nav-link-item">SIGN IN</NavLink>
-
-            <NavLink href="/account/register" class="nav-register-btn ml-3">REGISTER</NavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink href="/account/control-panel" class="nav-link-item">@_userName</NavLink>
+                    <a href="/account/logout" class="nav-register-btn ml-3">LOGOUT</a>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="/account/login" class="nav-link-item">SIGN IN</NavLink>
+                    <NavLink href="/account/register" class="nav-register-btn ml-3">REGISTER</NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
 
         </div>
     </nav>
@@ -255,11 +275,25 @@
 </style>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private string _userName = string.Empty;
+
     private bool _showServerMenu   = false;
     private bool _showMobileMenu   = false;
     private bool _showMobileServer = false;
 
     private ElementReference _serverDropdownRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationStateTask is not null)
+        {
+            var authState = await AuthenticationStateTask;
+            _userName = authState.User.Identity?.Name ?? string.Empty;
+        }
+    }
 
     private void ToggleServerMenu()   => _showServerMenu   = !_showServerMenu;
     private void CloseServerMenu()    => _showServerMenu   = false;

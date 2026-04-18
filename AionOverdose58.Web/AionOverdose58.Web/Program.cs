@@ -30,6 +30,10 @@ builder.Services.AddDbContextFactory<AionAccountsDbContext>(options =>
 // Email Settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
+// Account Settings
+builder.Services.Configure<AccountSettings>(builder.Configuration.GetSection("AccountSettings"));
+var requireEmailConfirmation = builder.Configuration.GetValue<bool>("AccountSettings:RequireEmailConfirmation", true);
+
 // ASP.NET Core Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -50,9 +54,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.User.RequireUniqueEmail = true;
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
-    // Sign-in settings - ENABLE EMAIL CONFIRMATION
-    options.SignIn.RequireConfirmedEmail = true;
-    options.SignIn.RequireConfirmedAccount = true;
+    // Sign-in settings - controlled by AccountSettings:RequireEmailConfirmation
+    options.SignIn.RequireConfirmedEmail = requireEmailConfirmation;
+    options.SignIn.RequireConfirmedAccount = requireEmailConfirmation;
 
     // Token providers
     options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
@@ -95,6 +99,9 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Add HttpContextAccessor for IP address tracking
 builder.Services.AddHttpContextAccessor();
 
+// Cascade authentication state to all components
+builder.Services.AddCascadingAuthenticationState();
+
 var app = builder.Build();
 
 // Seed roles and admin user
@@ -115,11 +122,12 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseAntiforgery();
 
 // Enable authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
