@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AionOverdose58.Web.Services;
 
-public interface INewsService
+public interface IArticleReadService
 {
     Task<List<Article>> GetLatestAsync(int count = 3);
     Task<List<Article>> GetAllAsync(int page = 1, int pageSize = 9, ArticleCategory? category = null);
@@ -12,11 +12,11 @@ public interface INewsService
     Task<Article?> GetByIdAsync(int id);
 }
 
-public class NewsService : INewsService
+public class ArticleReadService : IArticleReadService
 {
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public NewsService(IDbContextFactory<AppDbContext> dbContextFactory)
+    public ArticleReadService(IDbContextFactory<AppDbContext> dbContextFactory)
         => _dbContextFactory = dbContextFactory;
 
     public async Task<List<Article>> GetLatestAsync(int count = 3)

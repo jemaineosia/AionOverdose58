@@ -90,7 +90,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // Application services
-builder.Services.AddScoped<INewsService, NewsService>();
+builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
 builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -104,10 +104,11 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// Seed roles and admin user
+// Seed roles, admin user, and articles
 using (var scope = app.Services.CreateScope())
 {
     await RoleSeeder.SeedRolesAndAdminAsync(scope.ServiceProvider);
+    await ArticleSeeder.SeedArticlesAsync(scope.ServiceProvider);
 }
 
 // Configure the HTTP request pipeline.

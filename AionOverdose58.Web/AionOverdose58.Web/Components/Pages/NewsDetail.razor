@@ -1,7 +1,7 @@
 @page "/news/{Id:int}"
 @using AionOverdose58.Shared.Models
 @using AionOverdose58.Web.Services
-@inject INewsService NewsService
+@inject IArticleReadService NewsService
 @inject NavigationManager Nav
 
 <PageTitle>@(_article?.Title ?? "Article") — Aion Overdose 58</PageTitle>
