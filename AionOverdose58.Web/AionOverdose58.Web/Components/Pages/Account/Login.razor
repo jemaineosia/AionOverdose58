@@ -98,6 +98,10 @@
         {
             _successMessage = query["msg"];
         }
+        else if (query["reason"] == "password-changed")
+        {
+            _successMessage = "Your password has been changed. Please log in again.";
+        }
     }
 
     private async Task HandleLogin()

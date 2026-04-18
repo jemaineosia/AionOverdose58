@@ -27,6 +27,13 @@ var accountsConnectionString = builder.Configuration.GetConnectionString("AionAc
 builder.Services.AddDbContextFactory<AionAccountsDbContext>(options =>
     options.UseSqlServer(accountsConnectionString));
 
+// AionWorld Game Database Connection (read-only)
+var aionWorldConnectionString = builder.Configuration.GetConnectionString("AionWorldConnection")
+    ?? "Server=localhost;Database=AionWorld;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+builder.Services.AddDbContextFactory<AionWorldDbContext>(options =>
+    options.UseSqlServer(aionWorldConnectionString));
+
 // Email Settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 

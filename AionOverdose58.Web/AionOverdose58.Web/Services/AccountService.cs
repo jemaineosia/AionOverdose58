@@ -22,6 +22,9 @@ public interface IAccountService
     Task<(bool Success, string Message)> ForgotPasswordAsync(string email, string baseUrl);
     Task<(bool Success, string Message)> ResetPasswordAsync(string email, string code, string newPassword, string ipAddress);
     Task<(bool Success, string Message)> RecoverAccountWithPinAsync(string email, string pinCode, string baseUrl);
+    Task<(bool Success, string Message)> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
+    Task<(bool Success, string Message)> ChangePinAsync(string userId, string currentPin, string newPin);
+    Task<(bool Success, string Message)> ChangeEmailAsync(string userId, string newEmail, string baseUrl);
 }
 
 public class AccountService : IAccountService
@@ -463,6 +466,124 @@ public class AccountService : IAccountService
         {
             _logger.LogError(ex, "Error during PIN recovery for email {Email}", email);
             return (false, "An error occurred. Please try again later.");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return (false, "User not found.");
+
+            if (newPassword.Length < 6 || newPassword.Length > 16)
+                return (false, "New password must be between 6 and 16 characters.");
+
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (!result.Succeeded)
+            {
+                var error = result.Errors.FirstOrDefault()?.Description ?? "Password change failed.";
+                return (false, error);
+            }
+
+            // Sync new password to Aion game database
+            if (user.AionAccountUid.HasValue)
+            {
+                try
+                {
+                    await using var aionDb = await _aionDbFactory.CreateDbContextAsync();
+                    await aionDb.Database.ExecuteSqlRawAsync(
+                        @"UPDATE account_data SET 
+                            password = @password,
+                            passwd   = @passwd,
+                            web_password = @web_password
+                          WHERE id = @uid",
+                        new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(newPassword)),
+                        new SqlParameter("@passwd",   AionEncrypt.EncryptWebPassword(newPassword)),
+                        new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(newPassword).ToUpper()),
+                        new SqlParameter("@uid", user.AionAccountUid.Value));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to sync new password to Aion DB for user {Username}", user.UserName);
+                    // Don't fail the whole operation — web password is already changed
+                }
+            }
+
+            _logger.LogInformation("Password changed for user {Username}", user.UserName);
+            return (true, "Password changed successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for user {UserId}", userId);
+            return (false, "An error occurred. Please try again.");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> ChangePinAsync(string userId, string currentPin, string newPin)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return (false, "User not found.");
+
+            if (user.PinCode != currentPin)
+                return (false, "Current PIN is incorrect.");
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(newPin, @"^\d{4,6}$"))
+                return (false, "New PIN must be 4-6 digits.");
+
+            user.PinCode = newPin;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return (false, "Failed to update PIN.");
+
+            _logger.LogInformation("PIN changed for user {Username}", user.UserName);
+            return (true, "PIN changed successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing PIN for user {UserId}", userId);
+            return (false, "An error occurred. Please try again.");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> ChangeEmailAsync(string userId, string newEmail, string baseUrl)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return (false, "User not found.");
+
+            if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+                return (false, "New email is the same as your current email.");
+
+            var existing = await _userManager.FindByEmailAsync(newEmail);
+            if (existing != null)
+                return (false, "This email address is already in use.");
+
+            var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+            var encodedToken = HttpUtility.UrlEncode(token);
+            var confirmLink = $"{baseUrl}/account/confirm-email-change?userId={user.Id}&newEmail={HttpUtility.UrlEncode(newEmail)}&code={encodedToken}";
+
+            try
+            {
+                await _emailService.SendEmailAsync(newEmail, "Confirm your new email — Aion Overdose 58",
+                    $"<p>Hello {user.UserName},</p><p>Click the link below to confirm your new email address:</p><p><a href='{confirmLink}'>Confirm Email Change</a></p>");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email-change confirmation to {Email}", newEmail);
+                return (false, "Could not send confirmation email. Please try again.");
+            }
+
+            _logger.LogInformation("Email change requested for user {Username} -> {NewEmail}", user.UserName, newEmail);
+            return (true, $"A confirmation link has been sent to {newEmail}. Click it to complete the change.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error requesting email change for user {UserId}", userId);
+            return (false, "An error occurred. Please try again.");
         }
     }
 }

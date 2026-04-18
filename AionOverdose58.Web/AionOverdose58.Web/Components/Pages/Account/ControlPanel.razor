@@ -1,81 +1,547 @@
-@page "/account/panel"
+﻿@page "/account/control-panel"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using AionOverdose58.Shared.Models
+@using AionOverdose58.Shared.Models.Aion
+@using AionOverdose58.Web.Services
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@using AionOverdose58.Data
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IAccountService AccountService
+@inject NavigationManager Navigation
+@inject IDbContextFactory<AionAccountsDbContext> AionAccountsDbFactory
+@inject IDbContextFactory<AionWorldDbContext> AionWorldDbFactory
 
 <PageTitle>Control Panel — Aion Overdose 58</PageTitle>
 
-<div class="min-h-screen bg-aion-dark pt-32 pb-16 px-4">
-    <div class="max-w-4xl mx-auto">
-        <div class="text-center mb-12">
-            <h1 class="font-cinzel text-4xl text-white tracking-widest uppercase mb-2">
-                Control Panel
-            </h1>
-            <p class="text-gray-400 font-raleway">Welcome, Daeva</p>
+@if (_loading)
+{
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="text-aion-gold font-cinzel tracking-widest animate-pulse">Loading...</div>
+    </div>
+}
+else if (_user is null)
+{
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="text-gray-400">Redirecting...</div>
+    </div>
+}
+else
+{
+<div class="min-h-screen pt-56 pb-16 px-4">
+    <div class="max-w-5xl mx-auto">
+
+        <!-- Header -->
+        <div class="mb-10">
+            <h1 class="font-cinzel text-3xl md:text-4xl text-white tracking-widest uppercase">Control Panel</h1>
+            <div class="flex items-center gap-3 mt-2">
+                <div class="h-px w-12 bg-aion-gold/60"></div>
+                <span class="text-aion-gold text-sm">⚔</span>
+                <div class="h-px w-12 bg-aion-gold/60"></div>
+                <span class="text-gray-400 font-raleway text-sm">Welcome back, <span class="text-white">@_user.UserName</span></span>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Profile card -->
-            <div class="md:col-span-1 bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
-                <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Profile</h2>
-                <div class="flex flex-col items-center">
-                    <div class="w-16 h-16 rounded-full bg-aion-teal flex items-center justify-center text-2xl mb-3">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+            <div class="lg:col-span-1 space-y-4">
+
+                <!-- Avatar / summary -->
+                <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-5 text-center">
+                    <div class="w-16 h-16 rounded-full bg-aion-teal/40 border border-aion-teal/60 flex items-center justify-center text-3xl mx-auto mb-3">
                         ☠
                     </div>
-                    <p class="text-white font-semibold">Guest Daeva</p>
-                    <p class="text-gray-500 text-sm">guest@aionoverdose58.com</p>
-                    <span class="mt-2 px-3 py-1 bg-aion-red/20 border border-aion-red/40 text-aion-crimson text-xs rounded-full uppercase tracking-wider">Player</span>
+                    <p class="text-white font-semibold truncate">@_user.UserName</p>
+                    <p class="text-gray-500 text-xs truncate mt-1">@_user.Email</p>
+                    <span class="mt-2 inline-block px-3 py-1 bg-aion-red/20 border border-aion-red/40 text-aion-crimson text-xs rounded-full uppercase tracking-wider">@_role</span>
+                    @if (_user.AionAccountUid.HasValue)
+                    {
+                        <p class="text-gray-600 text-xs mt-2">Aion UID: #@_user.AionAccountUid</p>
+                    }
                 </div>
-                <div class="mt-6 space-y-2">
-                    <a href="#" class="block text-center text-sm text-gray-400 hover:text-aion-gold transition-colors py-2 border border-gray-700 rounded hover:border-aion-gold/40">
-                        Edit Profile
-                    </a>
-                    <a href="#" class="block text-center text-sm text-gray-400 hover:text-aion-gold transition-colors py-2 border border-gray-700 rounded hover:border-aion-gold/40">
-                        Change Password
-                    </a>
-                </div>
+
+                <!-- Nav tabs -->
+                <nav class="bg-gray-900/80 border border-gray-700/50 rounded-lg overflow-hidden">
+                    @foreach (var tab in _tabs)
+                    {
+                        <button @onclick="() => SetActiveTab(tab.Id)"
+                                class="w-full text-left px-4 py-3 text-sm font-raleway uppercase tracking-widest transition-colors flex items-center gap-2 border-l-2
+                                       @(_activeTab == tab.Id ? "border-aion-gold text-aion-gold bg-aion-gold/5" : "border-transparent text-gray-400 hover:text-white hover:bg-gray-800/40")">
+                            <span>@tab.Icon</span>
+                            @tab.Label
+                        </button>
+                    }
+                </nav>
+
+                <a href="/account/logout"
+                   class="block w-full text-center py-2.5 border border-aion-red/40 text-aion-crimson text-sm uppercase tracking-widest font-raleway rounded hover:bg-aion-red/10 transition-colors">
+                    Logout
+                </a>
             </div>
 
-            <!-- Activity panel -->
-            <div class="md:col-span-2 space-y-6">
-                <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
-                    <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Recent Activity</h2>
-                    <div class="space-y-3">
-                        @foreach (var item in _recentActivity)
+            <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+            <div class="lg:col-span-3">
+
+                <!-- Global feedback -->
+                @if (!string.IsNullOrEmpty(_successMsg))
+                {
+                    <div class="mb-4 px-4 py-3 rounded bg-green-900/20 border border-green-500/40 text-green-300 text-sm flex items-center justify-between">
+                        <span>@_successMsg</span>
+                        <button @onclick="() => _successMsg = null" class="text-green-500 hover:text-white ml-4">✕</button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_errorMsg))
+                {
+                    <div class="mb-4 px-4 py-3 rounded bg-aion-red/20 border border-aion-red/40 text-red-300 text-sm flex items-center justify-between">
+                        <span>@_errorMsg</span>
+                        <button @onclick="() => _errorMsg = null" class="text-red-400 hover:text-white ml-4">✕</button>
+                    </div>
+                }
+
+                <!-- ── TAB: OVERVIEW ──────────────────────────────────── -->
+                @if (_activeTab == "overview")
+                {
+                    <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6 space-y-4">
+                        <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Account Overview</h2>
+
+                        <dl class="divide-y divide-gray-800">
+                            @foreach (var row in _infoRows)
+                            {
+                                <div class="py-3 flex flex-col sm:flex-row sm:gap-4">
+                                    <dt class="text-gray-500 text-xs uppercase tracking-widest sm:w-40 shrink-0">@row.Label</dt>
+                                    <dd class="text-gray-200 text-sm mt-1 sm:mt-0">@row.Value</dd>
+                                </div>
+                            }
+                        </dl>
+
+                        <!-- Quick links -->
+                        <div class="pt-4 grid grid-cols-2 gap-3">
+                            <a href="/news" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                                📰 Latest News
+                            </a>
+                            <a href="/rankings" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                                🏆 Rankings
+                            </a>
+                            <a href="/download" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                                ⬇ Download
+                            </a>
+                            <a href="/server-status" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
+                                🟢 Server Status
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                <!-- ── TAB: CHARACTERS ────────────────────────────────── -->
+                @if (_activeTab == "characters")
+                {
+                    <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                        <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-6">My Characters</h2>
+
+                        @if (_charactersLoading)
                         {
-                            <div class="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0">
-                                <span class="text-aion-gold text-sm">⚔</span>
-                                <span class="text-gray-300 text-sm">@item</span>
+                            <div class="flex items-center justify-center py-12 text-gray-500 font-raleway">
+                                <span class="animate-pulse">Loading characters...</span>
+                            </div>
+                        }
+                        else if (!_user.AionAccountUid.HasValue)
+                        {
+                            <div class="text-center py-10">
+                                <p class="text-gray-500 text-sm font-raleway">Your web account is not linked to an Aion game account.</p>
+                                <p class="text-gray-600 text-xs mt-2">Contact an administrator to link your accounts.</p>
+                            </div>
+                        }
+                        else if (string.IsNullOrEmpty(_accountName))
+                        {
+                            <div class="text-center py-10">
+                                <p class="text-gray-500 text-sm font-raleway">Aion account not found in the game database.</p>
+                            </div>
+                        }
+                        else if (_characters.Count == 0)
+                        {
+                            <div class="text-center py-10">
+                                <p class="text-gray-500 text-sm font-raleway">No characters found for account <span class="text-white">@_accountName</span>.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-gray-500 text-xs font-raleway mb-4">Account: <span class="text-gray-300">@_accountName</span> &mdash; @_characters.Count character(s)</p>
+                            <div class="divide-y divide-gray-800">
+                                @foreach (var c in _characters)
+                                {
+                                    <a href="/character/@c.CharId"
+                                       class="flex items-center gap-4 py-4 px-2 hover:bg-gray-800/40 rounded transition-colors group">
+                                        <div class="w-10 h-10 rounded-full bg-aion-teal/20 border border-aion-teal/40 flex items-center justify-center shrink-0 overflow-hidden">
+                                            @if (!string.IsNullOrEmpty(c.ClassIconPath))
+                                            {
+                                                <img src="@c.ClassIconPath" alt="@c.ClassName" class="w-8 h-8 object-contain" />
+                                            }
+                                            else
+                                            {
+                                                <span class="text-lg">⚔</span>
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white font-semibold group-hover:text-aion-gold transition-colors truncate">@c.Name</p>
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                @if (!string.IsNullOrEmpty(c.RaceIconPath))
+                                                {
+                                                    <img src="@c.RaceIconPath" alt="@c.RaceName" class="w-3 h-3 object-contain opacity-70" />
+                                                }
+                                                <p class="text-gray-500 text-xs">@c.ClassName</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right shrink-0">
+                                            <p class="text-aion-gold font-cinzel text-sm">Lv. @c.Level</p>
+                                            @if (c.IsBanned)
+                                            {
+                                                <span class="text-xs text-aion-crimson">Banned</span>
+                                            }
+                                        </div>
+                                        <span class="text-gray-600 group-hover:text-gray-400 transition-colors text-sm">›</span>
+                                    </a>
+                                }
                             </div>
                         }
                     </div>
-                </div>
+                }
 
-                <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
-                    <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-4">Quick Links</h2>
-                    <div class="grid grid-cols-2 gap-3">
-                        <a href="/news" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
-                            📰 Latest News
-                        </a>
-                        <a href="/ranking" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
-                            🏆 Rankings
-                        </a>
-                        <a href="#" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
-                            📖 Wiki
-                        </a>
-                        <a href="/account/login" class="flex items-center gap-2 p-3 bg-gray-800/50 rounded hover:bg-aion-red/10 transition-colors text-gray-300 hover:text-white text-sm">
-                            🚪 Logout
-                        </a>
+                <!-- ── TAB: CHANGE PASSWORD ────────────────────────────── -->
+                @if (_activeTab == "password")
+                {
+                    <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                        <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-6">Change Password</h2>
+                        <p class="text-gray-400 text-xs mb-6 font-raleway">
+                            Your new password will also be updated in the game client automatically.
+                        </p>
+                        <EditForm Model="_pwModel" OnValidSubmit="HandleChangePassword">
+                            <DataAnnotationsValidator />
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Current Password</label>
+                                    <InputText @bind-Value="_pwModel.Current" type="password"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pwModel.Current)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">New Password</label>
+                                    <InputText @bind-Value="_pwModel.NewPassword" type="password"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pwModel.NewPassword)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Confirm New Password</label>
+                                    <InputText @bind-Value="_pwModel.Confirm" type="password"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pwModel.Confirm)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div class="border-t border-gray-700/60 pt-4">
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">PIN Verification</label>
+                                    <InputText @bind-Value="_pwModel.Pin" type="password" maxlength="6"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
+                                               placeholder="Enter your PIN to confirm" />
+                                    <ValidationMessage For="@(() => _pwModel.Pin)" class="text-red-400 text-xs mt-1" />
+                                    <p class="text-gray-600 text-xs mt-1">Your account PIN is required to make this change.</p>
+                                </div>
+                                <button type="submit" disabled="@_submitting"
+                                        class="w-full py-3 bg-aion-crimson hover:bg-aion-red text-white font-cinzel uppercase tracking-widest text-sm transition-colors disabled:opacity-50 rounded">
+                                    @(_submitting ? "Saving..." : "Update Password")
+                                </button>
+                            </div>
+                        </EditForm>
                     </div>
-                </div>
+                }
+
+                <!-- ── TAB: CHANGE EMAIL ───────────────────────────────── -->
+                @if (_activeTab == "email")
+                {
+                    <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                        <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-6">Change Email</h2>
+                        <div class="mb-4 p-3 bg-gray-800/50 rounded border border-gray-700">
+                            <p class="text-gray-400 text-xs uppercase tracking-widest mb-1">Current Email</p>
+                            <p class="text-white text-sm">@_user.Email</p>
+                        </div>
+                        <p class="text-gray-400 text-xs mb-6 font-raleway">
+                            A confirmation link will be sent to your new email. Your email won't change until you click it.
+                        </p>
+                        <EditForm Model="_emailModel" OnValidSubmit="HandleChangeEmail">
+                            <DataAnnotationsValidator />
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">New Email Address</label>
+                                    <InputText @bind-Value="_emailModel.NewEmail" type="email"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _emailModel.NewEmail)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div class="border-t border-gray-700/60 pt-4">
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">PIN Verification</label>
+                                    <InputText @bind-Value="_emailModel.Pin" type="password" maxlength="6"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors"
+                                               placeholder="Enter your PIN to confirm" />
+                                    <ValidationMessage For="@(() => _emailModel.Pin)" class="text-red-400 text-xs mt-1" />
+                                    <p class="text-gray-600 text-xs mt-1">Your account PIN is required to make this change.</p>
+                                </div>
+                                <button type="submit" disabled="@_submitting"
+                                        class="w-full py-3 bg-aion-crimson hover:bg-aion-red text-white font-cinzel uppercase tracking-widest text-sm transition-colors disabled:opacity-50 rounded">
+                                    @(_submitting ? "Sending..." : "Send Confirmation")
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                }
+
+                <!-- ── TAB: CHANGE PIN ────────────────────────────────── -->
+                @if (_activeTab == "pin")
+                {
+                    <div class="bg-gray-900/80 border border-gray-700/50 rounded-lg p-6">
+                        <h2 class="font-cinzel text-aion-gold text-sm uppercase tracking-widest mb-6">Change PIN</h2>
+                        <p class="text-gray-400 text-xs mb-6 font-raleway">
+                            Your PIN is used to recover your account if you forget your password. Keep it safe.
+                        </p>
+                        <EditForm Model="_pinModel" OnValidSubmit="HandleChangePin">
+                            <DataAnnotationsValidator />
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Current PIN</label>
+                                    <InputText @bind-Value="_pinModel.Current" type="password" maxlength="6"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pinModel.Current)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">New PIN (4-6 digits)</label>
+                                    <InputText @bind-Value="_pinModel.NewPin" type="password" maxlength="6"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pinModel.NewPin)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2">Confirm New PIN</label>
+                                    <InputText @bind-Value="_pinModel.Confirm" type="password" maxlength="6"
+                                               class="w-full bg-gray-800/80 border border-gray-600 text-white px-4 py-3 rounded text-sm focus:outline-none focus:border-aion-gold/50 transition-colors" />
+                                    <ValidationMessage For="@(() => _pinModel.Confirm)" class="text-red-400 text-xs mt-1" />
+                                </div>
+                                <button type="submit" disabled="@_submitting"
+                                        class="w-full py-3 bg-aion-crimson hover:bg-aion-red text-white font-cinzel uppercase tracking-widest text-sm transition-colors disabled:opacity-50 rounded">
+                                    @(_submitting ? "Saving..." : "Update PIN")
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                }
+
             </div>
         </div>
     </div>
 </div>
+}
 
 @code {
-    private readonly List<string> _recentActivity = new()
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // ── State ────────────────────────────────────────────────────────────────
+    private ApplicationUser? _user;
+    private string _role = "Player";
+    private bool _loading = true;
+    private bool _submitting;
+    private string? _successMsg;
+    private string? _errorMsg;
+    private string _activeTab = "overview";
+
+    // ── Tab definitions ──────────────────────────────────────────────────────
+    private readonly (string Id, string Icon, string Label)[] _tabs =
+    [
+        ("overview",    "👤", "Overview"),
+        ("characters",  "⚔",  "Characters"),
+        ("password",    "🔑", "Password"),
+        ("email",       "✉",  "Email"),
+        ("pin",         "🔐", "PIN"),
+    ];
+
+    // ── Info rows for Overview tab ───────────────────────────────────────────
+    private List<(string Label, string Value)> _infoRows = [];
+
+    // ── Characters state ────────────────────────────────────────────────────
+    private List<AionCharacter> _characters = [];
+    private bool _charactersLoaded;
+    private bool _charactersLoading;
+    private string? _accountName;
+
+    // ── Form models ──────────────────────────────────────────────────────────
+    private ChangePasswordModel _pwModel = new();
+    private ChangeEmailModel _emailModel = new();
+    private ChangePinModel _pinModel = new();
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
     {
-        "Account created — Welcome to Aion Overdose 58",
-        "Profile setup pending",
-        "No recent battles recorded",
-        "No forum activity yet",
-    };
+        if (AuthState is null)
+        {
+            Navigation.NavigateTo("/account/login");
+            return;
+        }
+
+        var auth = await AuthState;
+        if (!auth.User.Identity?.IsAuthenticated ?? true)
+        {
+            Navigation.NavigateTo("/account/login?returnUrl=/account/control-panel");
+            return;
+        }
+
+        _user = await UserManager.GetUserAsync(auth.User);
+        if (_user is null)
+        {
+            Navigation.NavigateTo("/account/login");
+            return;
+        }
+
+        var roles = await UserManager.GetRolesAsync(_user);
+        _role = roles.FirstOrDefault() ?? "Player";
+
+        _infoRows =
+        [
+            ("Username",       _user.UserName ?? "—"),
+            ("Email",          _user.Email    ?? "—"),
+            ("Role",           _role),
+            ("Registered",     _user.RegisteredDate.ToString("MMMM d, yyyy")),
+            ("Last Login",     _user.LastLoginDate?.ToString("MMMM d, yyyy HH:mm") ?? "—"),
+            ("Email Verified", _user.IsEmailVerified ? "Yes" : "No"),
+            ("Aion Account",   _user.AionAccountUid.HasValue ? $"UID #{_user.AionAccountUid}" : "Not linked"),
+            ("Account Status", _user.IsActive ? "Active" : "Suspended"),
+        ];
+
+        _loading = false;
+    }
+
+    // ── Handlers ─────────────────────────────────────────────────────────────
+    private async Task HandleChangePassword()
+    {
+        if (_pwModel.NewPassword != _pwModel.Confirm)
+        {
+            _errorMsg = "Passwords do not match.";
+            return;
+        }
+        if (_user!.PinCode != _pwModel.Pin)
+        {
+            _errorMsg = "Incorrect PIN. Please try again.";
+            return;
+        }
+        _submitting = true;
+        ClearMessages();
+        var (ok, msg) = await AccountService.ChangePasswordAsync(_user!.Id, _pwModel.Current, _pwModel.NewPassword);
+        if (ok)
+        {
+            await SignInManager.SignOutAsync();
+            Navigation.NavigateTo("/account/login?reason=password-changed");
+            return;
+        }
+        else _errorMsg = msg;
+        _submitting = false;
+    }
+
+    private async Task HandleChangeEmail()
+    {
+        if (_user!.PinCode != _emailModel.Pin)
+        {
+            _errorMsg = "Incorrect PIN. Please try again.";
+            return;
+        }
+        _submitting = true;
+        ClearMessages();
+        var baseUrl = Navigation.BaseUri.TrimEnd('/');
+        var (ok, msg) = await AccountService.ChangeEmailAsync(_user!.Id, _emailModel.NewEmail, baseUrl);
+        if (ok) { _successMsg = msg; _emailModel = new(); }
+        else _errorMsg = msg;
+        _submitting = false;
+    }
+
+    private async Task HandleChangePin()
+    {
+        if (_pinModel.NewPin != _pinModel.Confirm)
+        {
+            _errorMsg = "PINs do not match.";
+            return;
+        }
+        _submitting = true;
+        ClearMessages();
+        var (ok, msg) = await AccountService.ChangePinAsync(_user!.Id, _pinModel.Current, _pinModel.NewPin);
+        if (ok) { _successMsg = msg; _pinModel = new(); }
+        else _errorMsg = msg;
+        _submitting = false;
+    }
+
+    private void ClearMessages() { _successMsg = null; _errorMsg = null; }
+
+    private void SetActiveTab(string tabId)
+    {
+        _activeTab = tabId;
+        if (tabId == "characters" && !_charactersLoaded)
+            _ = LoadCharactersAsync();
+    }
+
+    private async Task LoadCharactersAsync()
+    {
+        if (_user is null || _charactersLoaded || _charactersLoading) return;
+        _charactersLoading = true;
+        StateHasChanged();
+        try
+        {
+            // Resolve account name from AionAccounts DB using AionAccountUid
+            // AionAccountUid = user_account.uid (set by od_CreateAccount stored procedure)
+            if (_user.AionAccountUid.HasValue)
+            {
+                await using var accountsCtx = await AionAccountsDbFactory.CreateDbContextAsync();
+                var userAccount = await accountsCtx.UserAccounts
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Uid == _user.AionAccountUid.Value);
+                _accountName = userAccount?.Account;
+            }
+
+            if (!string.IsNullOrEmpty(_accountName))
+            {
+                await using var worldCtx = await AionWorldDbFactory.CreateDbContextAsync();
+                _characters = await worldCtx.Characters
+                    .AsNoTracking()
+                    .Where(c => c.AccountName == _accountName)
+                    .OrderByDescending(c => c.Level)
+                    .ToListAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Could not load characters: {ex.Message}";
+        }
+        finally
+        {
+            _charactersLoaded = true;
+            _charactersLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Form models ──────────────────────────────────────────────────────────
+    private class ChangePasswordModel
+    {
+        [Required] public string Current { get; set; } = string.Empty;
+        [Required, MinLength(6), MaxLength(16)] public string NewPassword { get; set; } = string.Empty;
+        [Required] public string Confirm { get; set; } = string.Empty;
+        [Required(ErrorMessage = "PIN is required."), RegularExpression(@"^\d{4,6}$", ErrorMessage = "PIN must be 4-6 digits.")] public string Pin { get; set; } = string.Empty;
+    }
+
+    private class ChangeEmailModel
+    {
+        [Required, EmailAddress] public string NewEmail { get; set; } = string.Empty;
+        [Required(ErrorMessage = "PIN is required."), RegularExpression(@"^\d{4,6}$", ErrorMessage = "PIN must be 4-6 digits.")] public string Pin { get; set; } = string.Empty;
+    }
+
+    private class ChangePinModel
+    {
+        [Required] public string Current { get; set; } = string.Empty;
+        [Required, RegularExpression(@"^\d{4,6}$", ErrorMessage = "PIN must be 4-6 digits.")] public string NewPin { get; set; } = string.Empty;
+        [Required] public string Confirm { get; set; } = string.Empty;
+    }
 }
