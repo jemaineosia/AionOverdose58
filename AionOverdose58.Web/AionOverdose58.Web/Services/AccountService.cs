@@ -6,16 +6,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Data;
-using System.Text;
 using System.Web;
 
 namespace AionOverdose58.Web.Services;
 
 public interface IAccountService
 {
-    Task<(bool Success, string Message)> RegisterAccountAsync(string username, string email, string password, string pinCode, string baseUrl);
-    Task<bool> UsernameExistsAsync(string username);
+    Task<(bool Success, string Message)> RegisterAccountAsync(string email, string password, string pinCode, string baseUrl);
     Task<bool> EmailExistsAsync(string email);
     Task<(bool Success, string Message)> ConfirmEmailAsync(string userId, string code);
     Task<(bool Success, string Message)> ResendConfirmationEmailAsync(string email, string baseUrl);
@@ -52,94 +49,43 @@ public class AccountService : IAccountService
         _accountSettings = accountSettings.Value;
     }
 
-    public async Task<bool> UsernameExistsAsync(string username)
-    {
-        try
-        {
-            // Check in Identity
-            var identityUser = await _userManager.FindByNameAsync(username);
-            if (identityUser != null) return true;
-
-            // Check in Aion database
-            await using var aionDb = await _aionDbFactory.CreateDbContextAsync();
-            var existsInAion = await aionDb.UserInfos.AnyAsync(x => x.Account == username);
-
-            return existsInAion;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking username existence: {Username}", username);
-            return true; // Return true to prevent registration on error
-        }
-    }
-
     public async Task<bool> EmailExistsAsync(string email)
     {
         try
         {
-            // Check in Identity
             var identityUser = await _userManager.FindByEmailAsync(email);
-            if (identityUser != null) return true;
-
-            // Check in Aion database
-            await using var aionDb = await _aionDbFactory.CreateDbContextAsync();
-            var existsInAion = await aionDb.Ssns.AnyAsync(x => x.Email == email);
-
-            return existsInAion;
+            return identityUser != null;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking email existence: {Email}", email);
-            return true; // Return true to prevent registration on error
+            return true;
         }
     }
 
     public async Task<(bool Success, string Message)> RegisterAccountAsync(
-        string username, 
-        string email, 
-        string password, 
+        string email,
+        string password,
         string pinCode,
         string baseUrl)
     {
         try
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || 
-                string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(pinCode))
-            {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(pinCode))
                 return (false, "All fields are required.");
-            }
-
-            if (username.Length < 6 || username.Length > 20)
-            {
-                return (false, "Username must be between 6 and 20 characters.");
-            }
 
             if (password.Length < 6 || password.Length > 16)
-            {
                 return (false, "Password must be between 6 and 16 characters.");
-            }
 
             if (!System.Text.RegularExpressions.Regex.IsMatch(pinCode, @"^\d{4,6}$"))
-            {
                 return (false, "PIN code must be 4-6 digits.");
-            }
-
-            // Check for duplicate username and email
-            if (await UsernameExistsAsync(username))
-            {
-                return (false, "Username already exists.");
-            }
 
             if (await EmailExistsAsync(email))
-            {
-                return (false, "Email already exists.");
-            }
+                return (false, "Email already in use.");
 
-            // Create Identity user
             var user = new ApplicationUser
             {
-                UserName = username,
+                UserName = email,
                 Email = email,
                 PinCode = pinCode,
                 RegisteredDate = DateTime.UtcNow,
@@ -148,7 +94,6 @@ public class AccountService : IAccountService
             };
 
             var result = await _userManager.CreateAsync(user, password);
-
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -156,81 +101,25 @@ public class AccountService : IAccountService
                 return (false, $"Failed to create account: {errors}");
             }
 
-            // Assign default role
             await _userManager.AddToRoleAsync(user, "Player");
 
-            // Send confirmation email if required
             if (_accountSettings.RequireEmailConfirmation)
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encodedToken = HttpUtility.UrlEncode(token);
                 var confirmationLink = $"{baseUrl}/account/confirm-email?userId={user.Id}&code={encodedToken}";
-
                 try
                 {
-                    await _emailService.SendConfirmationEmailAsync(email, username, confirmationLink);
+                    await _emailService.SendConfirmationEmailAsync(email, email, confirmationLink);
                     _logger.LogInformation("Confirmation email sent to {Email}", email);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to send confirmation email to {Email}", email);
-                    // Don't fail registration if email fails
                 }
             }
 
-            // Create account in Aion database using stored procedure
-            await using var aionDb = await _aionDbFactory.CreateDbContextAsync();
-
-            var returnValueParameter = new SqlParameter("@ReturnVal", SqlDbType.Int)
-            {
-                Direction = ParameterDirection.Output
-            };
-
-            var guid = Guid.NewGuid().ToString();
-
-            await aionDb.Database.ExecuteSqlRawAsync(
-                "EXEC @ReturnVal = od_CreateAccount @ggid, @account, @password, @email, @mobile, @question1, @question2, @answer1, @answer2, @passwd, @web_password",
-                new SqlParameter("@ggid", guid),
-                new SqlParameter("@account", username),
-                new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(password)),
-                new SqlParameter("@email", email),
-                new SqlParameter("@mobile", pinCode),
-                new SqlParameter("@question1", string.Empty),
-                new SqlParameter("@question2", string.Empty),
-                new SqlParameter("@answer1", new byte[1]),
-                new SqlParameter("@answer2", new byte[1]),
-                new SqlParameter("@passwd", AionEncrypt.EncryptWebPassword(password)),
-                new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(password).ToUpper()),
-                returnValueParameter
-            );
-
-            var aionAccountUid = (int)returnValueParameter.Value;
-
-            if (aionAccountUid > 0)
-            {
-                // Update Identity user with Aion account UID
-                user.AionAccountUid = aionAccountUid;
-                await _userManager.UpdateAsync(user);
-
-                // Sync password to user_auth in case the SP returned an existing account UID
-                await aionDb.Database.ExecuteSqlRawAsync(
-                    @"UPDATE user_auth SET 
-                        password = @password,
-                        passwd   = @passwd,
-                        web_password = @web_password
-                      WHERE account = @account",
-                    new SqlParameter("@password", AionEncrypt.EncryptPasswordInByte(password)),
-                    new SqlParameter("@passwd", AionEncrypt.EncryptWebPassword(password)),
-                    new SqlParameter("@web_password", "0x" + AionEncrypt.EncryptPassword(password).ToUpper()),
-                    new SqlParameter("@account", username)
-                );
-            }
-            else
-            {
-                _logger.LogWarning("Stored procedure returned {ReturnValue} for user: {Username}", aionAccountUid, username);
-            }
-
-            _logger.LogInformation("Account created successfully for user: {Username} with AionUID: {AionUid}", username, aionAccountUid);
+            _logger.LogInformation("Web account registered for {Email}", email);
 
             var message = _accountSettings.RequireEmailConfirmation
                 ? "Registration successful! Please check your email to confirm your account."
@@ -240,7 +129,7 @@ public class AccountService : IAccountService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error registering account for username: {Username}", username);
+            _logger.LogError(ex, "Error registering account for email: {Email}", email);
 #if DEBUG
             return (false, $"[DEBUG] {ex.GetType().Name}: {ex.Message}");
 #else
